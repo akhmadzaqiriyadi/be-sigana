@@ -1,0 +1,123 @@
+// --- SISTEM SIGANA DATABASE SCHEMA ---
+
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// 1. Manajemen Pengguna & Akses
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  password     String
+  name         String
+  role         Role          @default(RELAWAN)
+  isVerified   Boolean       @default(false) // Verifikasi oleh Admin
+  measurements Measurement[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  RELAWAN
+  ADMIN
+  STAKEHOLDER
+}
+
+// 2. Normalisasi Wilayah & Geo-Location
+model Village {
+  id        Int      @id @default(autoincrement())
+  name      String // Nama Desa
+  districts String // Nama Kecamatan
+  poskos    Posko[]
+  balitas   Balita[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("villages")
+}
+
+model Posko {
+  id        Int      @id @default(autoincrement())
+  name      String // Contoh: "Tenda Pengungsian Lapangan Guntur"
+  villageId Int
+  village   Village  @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  latitude  Float? // Koordinat untuk Peta Sebaran
+  longitude Float?
+  balitas   Balita[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("poskos")
+}
+
+// 3. Data Master Balita (Induk)
+model Balita {
+  id           String        @id @default(uuid())
+  namaAnak     String
+  namaOrtu     String
+  tanggalLahir DateTime // Untuk hitung Umur Bulan otomatis
+  jenisKelamin Gender
+  villageId    Int
+  village      Village       @relation(fields: [villageId], references: [id], onDelete: Cascade)
+  poskoId      Int?
+  posko        Posko?        @relation(fields: [poskoId], references: [id], onDelete: SetNull)
+  measurements Measurement[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@map("balitas")
+}
+
+enum Gender {
+  L
+  P
+}
+
+// 4. Data Transaksi Pengukuran (Antropometri)
+model Measurement {
+  id            String   @id @default(uuid())
+  balitaId      String
+  balita        Balita   @relation(fields: [balitaId], references: [id], onDelete: Cascade)
+  relawanId     String
+  relawan       User     @relation(fields: [relawanId], references: [id], onDelete: Cascade)
+
+  // Input Fisik
+  beratBadan    Float
+  tinggiBadan   Float
+  lingkarKepala Float
+  lila          Float
+  posisiUkur    Posisi // TERLENTANG / BERDIRI
+
+  // Output Z-Score (Permenkes 2/2020)
+  bb_u_status   String
+  tb_u_status   String
+  bb_tb_status  String
+  statusAkhir   Status // HIJAU (Aman), KUNING (Waspada), MERAH (Bahaya)
+
+  // Mekanisme Sync PWA
+  isSynced      Boolean  @default(true)
+  localId       String? // ID dari IndexedDB untuk rekonsiliasi data
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@map("measurements")
+}
+
+enum Posisi {
+  TERLENTANG
+  BERDIRI
+}
+
+enum Status {
+  HIJAU
+  KUNING
+  MERAH
+}
