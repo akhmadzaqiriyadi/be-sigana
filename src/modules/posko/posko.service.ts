@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import prisma from '../../config/db';
 import { NotFoundError } from '../../utils/ApiError';
 
@@ -16,9 +17,12 @@ interface UpdatePoskoInput {
 }
 
 export class PoskoService {
-  async findAll(page = 1, limit = 10, villageId?: number) {
+  async findAll(page = 1, limit = 10, villageId?: number, search?: string) {
     const skip = (page - 1) * limit;
-    const where = villageId ? { villageId } : {};
+    const where: Prisma.PoskoWhereInput = {
+      ...(villageId && { villageId }),
+      ...(search && { name: { contains: search, mode: 'insensitive' } }),
+    };
 
     const [poskos, total] = await Promise.all([
       prisma.posko.findMany({

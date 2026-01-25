@@ -1,13 +1,18 @@
 import { Router } from 'express';
 import {
+  createUser,
   getAllUsers,
   getUserById,
   updateUser,
   verifyUser,
   deleteUser,
   getPendingUsers,
+  updateProfile,
 } from './user.controller';
 import { authenticate, authorize } from '../../middlewares/auth';
+import { validate } from '../../middlewares/validate';
+import { verifyUserSchema } from '../../validations/master.validation';
+import { updateProfileSchema, createUserSchema } from '../../validations/auth.validation';
 
 /**
  * @openapi
@@ -46,6 +51,97 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *             example:
  *               success: false
  *               message: 'Access denied. Admin role required.'
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: Create user (Admin only)
+ *     description: Create a new user with admin privileges. Created users are verified by default.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *                 example: 'newuser@example.com'
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *                 example: 'password123'
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: 'John Doe'
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, RELAWAN, STAKEHOLDER]
+ *                 example: 'RELAWAN'
+ *               isVerified:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 'User created successfully'
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       409:
+ *         description: Email already registered
+ * 
+ * /users/profile:
+ *   patch:
+ *     tags:
+ *       - User
+ *     summary: Update profile
+ *     description: Update current user's profile information.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 minLength: 3
+ *                 example: 'New Name'
+ *     responses:
+ *       200:
+ *         description: Profile updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 'Profile updated successfully'
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
  * 
  * /users/pending:
  *   get:
@@ -100,15 +196,17 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *       404:
  *         description: User not found
  */
-import { validate } from '../../middlewares/validate';
-import { verifyUserSchema } from '../../validations/master.validation';
 
 const router = Router();
 
 // All routes require authentication
 router.use(authenticate);
 
+// Profile routes (Must be before /:id)
+router.patch('/profile', validate(updateProfileSchema), updateProfile);
+
 // Admin only routes
+router.post('/', authorize('ADMIN'), validate(createUserSchema), createUser);
 router.get('/', authorize('ADMIN'), getAllUsers);
 router.get('/pending', authorize('ADMIN'), getPendingUsers);
 router.get('/:id', authorize('ADMIN'), getUserById);

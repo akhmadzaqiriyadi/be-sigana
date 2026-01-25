@@ -20,6 +20,7 @@ model User {
   measurements Measurement[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
+  deletedAt    DateTime?     // Soft Delete
 
   @@map("users")
 }

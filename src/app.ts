@@ -4,6 +4,7 @@ import helmet from 'helmet';
 import morgan from 'morgan';
 import rateLimit from 'express-rate-limit';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { logger } from './utils/logger';
 import { env } from './config/env';
 import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
@@ -18,9 +19,27 @@ import { openApiSpecification } from './config/swagger';
 const app: Application = express();
 
 // Middleware
+app.set('trust proxy', 1); // Trust first proxy
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors());
-app.use(compression());
+app.use(cors({
+  origin: env.NODE_ENV === 'development' 
+    ? ['http://localhost:3000', 'http://localhost:3001'] 
+    : env.FRONTEND_URL || 'http://localhost:3000',
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
+  exposedHeaders: ['Set-Cookie'],
+}));
+// Compression disabled - Bun doesn't fully support zlib.createBrotliCompress yet
+// app.use(compression({
+//   filter: (req, res) => {
+//     if (req.headers['x-no-compression']) {
+//       return false;
+//     }
+//     return compression.filter(req, res);
+//   },
+//   threshold: 0,
+// }));
 
 // Rate Limiting
 const limiter = rateLimit({
@@ -42,6 +61,7 @@ app.use(
     },
   })
 );
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -12,12 +12,26 @@ export const authenticate = (
 ): void => {
   try {
     const authHeader = req.headers.authorization;
+    let token: string | undefined;
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    // Check for token in Authorization header first
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const headerToken = authHeader.split(' ')[1];
+      // Only use header token if it's not 'undefined' or empty string
+      if (headerToken && headerToken !== 'undefined' && headerToken !== 'null') {
+        token = headerToken;
+      }
+    } 
+    
+    // Fall back to cookie if no valid header token
+    if (!token && req.cookies && req.cookies.token) {
+      token = req.cookies.token;
+    }
+
+    if (!token) {
       throw new UnauthorizedError('Access token required');
     }
 
-    const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
     
     req.user = decoded;

@@ -37,6 +37,7 @@ const options: swaggerJsdoc.Options = {
             role: { type: 'string', enum: ['ADMIN', 'RELAWAN', 'STAKEHOLDER'] },
             isVerified: { type: 'boolean' },
             createdAt: { type: 'string', format: 'date-time' },
+            deletedAt: { type: 'string', format: 'date-time', nullable: true },
           },
         },
         Village: {

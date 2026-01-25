@@ -7,11 +7,12 @@ import { BadRequestError } from '../../utils/ApiError';
 export const getAllPoskos = asyncHandler(async (req: Request, res: Response) => {
   const page = parseInt(String(req.query.page)) || 1;
   const limit = parseInt(String(req.query.limit)) || 10;
+  const search = req.query.search ? String(req.query.search) : undefined;
   const villageId = req.query.villageId
     ? parseInt(String(req.query.villageId))
     : undefined;
 
-  const result = await poskoService.findAll(page, limit, villageId);
+  const result = await poskoService.findAll(page, limit, villageId, search);
   sendSuccess(res, 'Poskos retrieved successfully', result.poskos, result.meta);
 });
 
