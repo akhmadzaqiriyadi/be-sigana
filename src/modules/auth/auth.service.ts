@@ -35,7 +35,7 @@ export class AuthService {
     });
 
     if (existingUser) {
-      throw new ConflictError("Email already registered");
+      throw new ConflictError("Email sudah terdaftar");
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -65,18 +65,18 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError("Email atau password salah");
     }
 
     const isPasswordValid = await bcrypt.compare(data.password, user.password);
 
     if (!isPasswordValid) {
-      throw new UnauthorizedError("Invalid email or password");
+      throw new UnauthorizedError("Email atau password salah");
     }
 
     if (!user.isVerified) {
       throw new BadRequestError(
-        "Account not verified. Please wait for admin approval.",
+        "Akun belum diverifikasi. Harap tunggu persetujuan admin.",
       );
     }
 
@@ -113,7 +113,7 @@ export class AuthService {
       });
 
       if (!user?.refreshToken) {
-        throw new ForbiddenError("Invalid refresh token");
+        throw new ForbiddenError("Refresh token tidak valid");
       }
 
       // 3. Verify token matches DB hash
@@ -127,7 +127,7 @@ export class AuthService {
           data: { refreshToken: null },
         });
         throw new ForbiddenError(
-          "Refresh token reuse detected. Please login again.",
+          "Terdeteksi penggunaan ulang refresh token. Silakan login kembali.",
         );
       }
 
@@ -143,7 +143,7 @@ export class AuthService {
       return newTokens;
     } catch (error: any) {
       if (error.statusCode === 403) throw error;
-      throw new ForbiddenError("Invalid or expired refresh token");
+      throw new ForbiddenError("Refresh token tidak valid atau kadaluarsa");
     }
   }
 
@@ -186,7 +186,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new UnauthorizedError("User not found");
+      throw new UnauthorizedError("Pengguna tidak ditemukan");
     }
 
     return user;

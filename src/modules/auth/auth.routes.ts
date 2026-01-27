@@ -48,7 +48,7 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: true
  *                 message:
  *                   type: 'string'
- *                   example: 'Registration successful. Please wait for admin approval.'
+ *                   example: 'Pendaftaran berhasil. Silakan tunggu persetujuan admin.'
  *                 data:
  *                   $ref: '#/components/schemas/User'
  *       400:
@@ -90,7 +90,7 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: true
  *                 message:
  *                   type: 'string'
- *                   example: 'Login successful'
+ *                   example: 'Login berhasil'
  *                 data:
  *                   type: 'object'
  *                   properties:
@@ -119,7 +119,7 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: true
  *                 message:
  *                   type: 'string'
- *                   example: 'Token refreshed'
+ *                   example: 'Token berhasil diperbarui'
  *                 data:
  *                   type: 'object'
  *                   properties:
@@ -151,7 +151,7 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: true
  *                 message:
  *                   type: 'string'
- *                   example: 'Logout successful'
+ *                   example: 'Logout berhasil'
  *                 data:
  *                   type: 'null'
  *
@@ -175,7 +175,7 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: true
  *                 message:
  *                   type: 'string'
- *                   example: 'Profile retrieved successfully'
+ *                   example: 'Profil berhasil diambil'
  *                 data:
  *                   $ref: '#/components/schemas/User'
  */

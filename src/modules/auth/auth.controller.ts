@@ -9,13 +9,13 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
 
   if (!email || !password || !name) {
-    throw new BadRequestError("Email, password, and name are required");
+    throw new BadRequestError("Email, password, dan nama wajib diisi");
   }
 
   const user = await authService.register({ email, password, name });
   sendCreated(
     res,
-    "Registration successful. Please wait for admin approval.",
+    "Pendaftaran berhasil. Silakan tunggu persetujuan admin.",
     user,
   );
 });
@@ -24,7 +24,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    throw new BadRequestError("Email and password are required");
+    throw new BadRequestError("Email dan password wajib diisi");
   }
 
   const { user, accessToken, refreshToken } = await authService.login({
@@ -44,14 +44,14 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
 
   res.cookie("refreshToken", refreshToken, cookieOptions);
 
-  sendSuccess(res, "Login successful", { user, accessToken });
+  sendSuccess(res, "Login berhasil", { user, accessToken });
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
 
   if (!refreshToken) {
-    throw new BadRequestError("Refresh token required");
+    throw new BadRequestError("Refresh token wajib diisi");
   }
 
   const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
@@ -68,13 +68,15 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
   res.cookie("refreshToken", newRefreshToken, cookieOptions);
 
-  sendSuccess(res, "Token refreshed", { accessToken: newAccessToken });
+  sendSuccess(res, "Token berhasil diperbarui", {
+    accessToken: newAccessToken,
+  });
 });
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const user = await authService.getProfile(userId);
-  sendSuccess(res, "Profile retrieved successfully", user);
+  sendSuccess(res, "Profil berhasil diambil", user);
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
@@ -99,5 +101,5 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
     path: "/api/v1/auth",
   });
 
-  sendSuccess(res, "Logout successful", null);
+  sendSuccess(res, "Logout berhasil", null);
 });
