@@ -34,3 +34,9 @@ export const getMeasurementSchema = z.object({
     status: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
   }),
 });
+
+export const syncPullSchema = z.object({
+  query: z.object({
+    lastSync: z.string().datetime("Format tanggal harus ISO 8601"),
+  }),
+});

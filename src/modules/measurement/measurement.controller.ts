@@ -10,23 +10,31 @@ import { Posisi, Status } from "@prisma/client";
 
 export const getAllMeasurements = asyncHandler(
   async (req: Request, res: Response) => {
-    const page = parseInt(String(req.query.page)) || 1;
-    const limit = parseInt(String(req.query.limit)) || 10;
-    const balitaId = req.query.balitaId
-      ? String(req.query.balitaId)
-      : undefined;
-    const relawanId = req.query.relawanId
-      ? String(req.query.relawanId)
-      : undefined;
-    const status = req.query.status
-      ? (String(req.query.status) as Status)
-      : undefined;
+    const page =
+      typeof req.query.page === "string" ? Number.parseInt(req.query.page) : 1;
+    const limit =
+      typeof req.query.limit === "string"
+        ? Number.parseInt(req.query.limit)
+        : 10;
+    const balitaId =
+      typeof req.query.balitaId === "string" ? req.query.balitaId : undefined;
+    const relawanId =
+      typeof req.query.relawanId === "string" ? req.query.relawanId : undefined;
+    const status =
+      typeof req.query.status === "string"
+        ? (req.query.status as Status)
+        : undefined;
 
-    const result = await measurementService.findAll(page, limit, {
-      balitaId,
-      relawanId,
-      status,
-    });
+    const result = await measurementService.findAll(
+      page,
+      limit,
+      {
+        balitaId,
+        relawanId,
+        status,
+      },
+      req.user as { role: string; userId: string }
+    );
     sendSuccess(
       res,
       "Measurements retrieved successfully",
@@ -77,10 +85,10 @@ export const createMeasurement = asyncHandler(
     const measurement = await measurementService.create({
       balitaId,
       relawanId: req.user!.userId,
-      beratBadan: parseFloat(String(beratBadan)),
-      tinggiBadan: parseFloat(String(tinggiBadan)),
-      lingkarKepala: parseFloat(String(lingkarKepala)),
-      lila: parseFloat(String(lila)),
+      beratBadan: Number.parseFloat(String(beratBadan)),
+      tinggiBadan: Number.parseFloat(String(tinggiBadan)),
+      lingkarKepala: Number.parseFloat(String(lingkarKepala)),
+      lila: Number.parseFloat(String(lila)),
       posisiUkur: posisiUkur as Posisi,
       localId,
     });
@@ -112,6 +120,14 @@ export const syncMeasurements = asyncHandler(
     sendSuccess(res, "Measurements synced successfully", results);
   }
 );
+
+export const syncPull = asyncHandler(async (req: Request, res: Response) => {
+  const lastSync = new Date(req.query.lastSync as string);
+  const relawanId = req.user!.role === "RELAWAN" ? req.user!.userId : undefined;
+
+  const results = await measurementService.getDeltaSync(lastSync, relawanId);
+  sendSuccess(res, "Downstream data retrieved successfully", results);
+});
 
 export const getStatistics = asyncHandler(
   async (_req: Request, res: Response) => {

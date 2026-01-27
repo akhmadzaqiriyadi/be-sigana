@@ -106,6 +106,7 @@ model Measurement {
   // Mekanisme Sync PWA
   isSynced      Boolean  @default(true)
   localId       String? // ID dari IndexedDB untuk rekonsiliasi data
+  deletedAt     DateTime? // Tombstone untuk Downstream Sync
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt

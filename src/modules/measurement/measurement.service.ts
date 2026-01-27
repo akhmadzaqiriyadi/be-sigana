@@ -23,13 +23,21 @@ export class MeasurementService {
   async findAll(
     page = 1,
     limit = 10,
-    filters?: { balitaId?: string; relawanId?: string; status?: Status }
+    filters?: { balitaId?: string; relawanId?: string; status?: Status },
+    currentUser?: { role: string; userId: string }
   ) {
     const skip = (page - 1) * limit;
     const where: Record<string, unknown> = {};
 
+    // RBAC: If RELAWAN, force filter by their ID
+    if (currentUser?.role === "RELAWAN") {
+      where.relawanId = currentUser.userId;
+    } else if (filters?.relawanId) {
+      // Admin/Stakeholder can filter by specific relawan
+      where.relawanId = filters.relawanId;
+    }
+
     if (filters?.balitaId) where.balitaId = filters.balitaId;
-    if (filters?.relawanId) where.relawanId = filters.relawanId;
     if (filters?.status) where.statusAkhir = filters.status;
 
     const [measurements, total] = await Promise.all([
@@ -107,14 +115,14 @@ export class MeasurementService {
       throw new NotFoundError("Balita not found");
     }
 
-    // Calculate Z-Score and status
+    // Calculate Z-Score and status using WHO LMS Standard
     const umurBulan = this.calculateAgeInMonths(balita.tanggalLahir);
-    const zScoreResult = this.calculateZScore({
-      beratBadan: data.beratBadan,
-      tinggiBadan: data.tinggiBadan,
+    const zScoreResult = calculateAnthropometry(
       umurBulan,
-      jenisKelamin: balita.jenisKelamin,
-    });
+      data.beratBadan,
+      data.tinggiBadan,
+      balita.jenisKelamin
+    );
 
     return prisma.measurement.create({
       data: {
@@ -143,35 +151,104 @@ export class MeasurementService {
   }
 
   async syncFromOffline(measurements: SyncMeasurementInput[]) {
-    const results = [];
+    const localIds = measurements.map((m) => m.localId).filter((id) => id);
+    const existing = await prisma.measurement.findMany({
+      where: { localId: { in: localIds } },
+      select: { id: true, localId: true },
+    });
 
-    for (const measurement of measurements) {
-      // Check if already synced by localId
-      const existing = await prisma.measurement.findFirst({
-        where: { localId: measurement.localId },
-      });
+    const existingMap = new Map(existing.map((m) => [m.localId, m.id]));
+    const balitaIds = [...new Set(measurements.map((m) => m.balitaId))];
 
-      if (existing) {
-        // Update existing
-        const updated = await prisma.measurement.update({
-          where: { id: existing.id },
-          data: {
-            ...measurement,
-            isSynced: true,
-          },
-        });
-        results.push({ action: "updated", data: updated });
+    // Optimization: Fetch all Balita info once for Z-Score calculation
+    const balitas = await prisma.balita.findMany({
+      where: { id: { in: balitaIds } },
+      select: { id: true, tanggalLahir: true, jenisKelamin: true },
+    });
+    const balitaMap = new Map(balitas.map((b) => [b.id, b]));
+
+    const toCreate: any[] = [];
+    const updatePromises: any[] = [];
+
+    for (const m of measurements) {
+      const balita = balitaMap.get(m.balitaId);
+      if (!balita) continue;
+
+      const umurBulan = this.calculateAgeInMonths(balita.tanggalLahir);
+      const zScore = calculateAnthropometry(
+        umurBulan,
+        m.beratBadan,
+        m.tinggiBadan,
+        balita.jenisKelamin
+      );
+
+      const data = {
+        ...m,
+        bb_u_status: zScore.bb_u_status,
+        tb_u_status: zScore.tb_u_status,
+        bb_tb_status: zScore.bb_tb_status,
+        statusAkhir: zScore.statusAkhir as Status,
+        isSynced: true,
+      };
+
+      const existingId = existingMap.get(m.localId);
+      if (existingId) {
+        updatePromises.push(
+          prisma.measurement.update({
+            where: { id: existingId },
+            data,
+          })
+        );
       } else {
-        // Create new
-        const created = await this.create({
-          ...measurement,
-          isSynced: true,
-        });
-        results.push({ action: "created", data: created });
+        toCreate.push(data);
       }
     }
 
-    return results;
+    // Execute Batches
+    if (toCreate.length > 0) {
+      await prisma.measurement.createMany({ data: toCreate });
+    }
+
+    if (updatePromises.length > 0) {
+      await prisma.$transaction(updatePromises);
+    }
+
+    return {
+      created: toCreate.length,
+      updated: updatePromises.length,
+      status: "success",
+    };
+  }
+
+  async getDeltaSync(lastSync: Date, relawanId?: string) {
+    const where: any = {
+      OR: [{ updatedAt: { gt: lastSync } }, { deletedAt: { gt: lastSync } }],
+    };
+
+    // RBAC for Downstream Sync
+    if (relawanId) {
+      where.relawanId = relawanId;
+    }
+
+    return prisma.measurement.findMany({
+      where,
+      select: {
+        id: true,
+        localId: true,
+        balitaId: true,
+        beratBadan: true,
+        tinggiBadan: true,
+        lingkarKepala: true,
+        lila: true,
+        posisiUkur: true,
+        bb_u_status: true,
+        tb_u_status: true,
+        bb_tb_status: true,
+        statusAkhir: true,
+        updatedAt: true,
+        deletedAt: true, // Important for tombstone
+      },
+    });
   }
 
   async getStatistics() {
@@ -231,39 +308,6 @@ export class MeasurementService {
     months -= birth.getMonth();
     months += today.getMonth();
     return months <= 0 ? 0 : months;
-  }
-
-  /**
-   * Simplified Z-Score calculation based on Permenkes 2/2020
-   * In production, this should use WHO growth standards lookup tables
-   */
-  /**
-   * Calculate Z-Score and Status using WHO Standards (via Helper)
-   */
-  private calculateZScore(params: {
-    beratBadan: number;
-    tinggiBadan: number;
-    umurBulan: number;
-    jenisKelamin: string;
-  }) {
-    // Import helper dynamically or valid scope?
-    // Since we are in class method, better to call imported function.
-    // Note: ensure calculateAnthropometry is imported at top of file.
-
-    return calculateAnthropometry(
-      params.umurBulan,
-      params.beratBadan,
-      params.tinggiBadan,
-      params.jenisKelamin
-    );
-  }
-
-  private getZScoreLabel(zScore: number): string {
-    if (zScore < -3) return "Sangat Kurang";
-    if (zScore < -2) return "Kurang";
-    if (zScore <= 2) return "Normal";
-    if (zScore <= 3) return "Lebih";
-    return "Sangat Lebih";
   }
 }
 

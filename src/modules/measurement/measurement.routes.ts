@@ -4,12 +4,14 @@ import {
   createMeasurementSchema,
   getMeasurementSchema,
   syncMeasurementSchema,
+  syncPullSchema,
 } from "../../validations/measurement.validation";
 import {
   getAllMeasurements,
   getMeasurementById,
   createMeasurement,
   syncMeasurements,
+  syncPull,
   getStatistics,
   deleteMeasurement,
 } from "./measurement.controller";
@@ -116,6 +118,7 @@ router.use(authenticate);
 
 // Read access for all authenticated users
 router.get("/", validate(getMeasurementSchema), getAllMeasurements);
+router.get("/sync-pull", validate(syncPullSchema), syncPull);
 router.get("/statistics", authorize("ADMIN", "STAKEHOLDER"), getStatistics);
 router.get("/:id", getMeasurementById);
 
