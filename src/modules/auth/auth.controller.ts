@@ -1,59 +1,103 @@
-import { Request, Response } from 'express';
-import { asyncHandler } from '../../middlewares/asyncHandler';
-import { authService } from './auth.service';
-import { sendSuccess, sendCreated } from '../../utils/response';
-import { BadRequestError } from '../../utils/ApiError';
+import { Request, Response } from "express";
+import { asyncHandler } from "@/middlewares/asyncHandler";
+import { authService } from "./auth.service";
+import { sendSuccess, sendCreated } from "@/utils/response";
+import { BadRequestError } from "@/utils/ApiError";
+import { env } from "@/config/env";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
 
   if (!email || !password || !name) {
-    throw new BadRequestError('Email, password, and name are required');
+    throw new BadRequestError("Email, password, and name are required");
   }
 
   const user = await authService.register({ email, password, name });
-  sendCreated(res, 'Registration successful. Please wait for admin approval.', user);
+  sendCreated(
+    res,
+    "Registration successful. Please wait for admin approval.",
+    user,
+  );
 });
 
 export const login = asyncHandler(async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
   if (!email || !password) {
-    throw new BadRequestError('Email and password are required');
+    throw new BadRequestError("Email and password are required");
   }
 
-  const result = await authService.login({ email, password });
-  
-  // Set token in httpOnly cookie for credentials-based auth
+  const { user, accessToken, refreshToken } = await authService.login({
+    email,
+    password,
+  });
+
+  // Set refresh token in httpOnly cookie
   const cookieOptions = {
     httpOnly: true,
-    // Secure is required for SameSite=None. 
-    // Localhost is treated as secure context by browsers, so this works on dev too.
-    secure: true, 
-    sameSite: 'none' as const,
+    secure: env.NODE_ENV === "production", // Secure in production
+    sameSite:
+      env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const), // Lax for local dev ease, None for prod
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: "/api/v1/auth", // Restrict to auth routes
   };
-  
-  res.cookie('token', result.token, cookieOptions);
-  
-  sendSuccess(res, 'Login successful', result);
+
+  res.cookie("refreshToken", refreshToken, cookieOptions);
+
+  sendSuccess(res, "Login successful", { user, accessToken });
+});
+
+export const refresh = asyncHandler(async (req: Request, res: Response) => {
+  const refreshToken = req.cookies.refreshToken;
+
+  if (!refreshToken) {
+    throw new BadRequestError("Refresh token required");
+  }
+
+  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
+    await authService.refreshToken(refreshToken);
+
+  const cookieOptions = {
+    httpOnly: true,
+    secure: env.NODE_ENV === "production",
+    sameSite:
+      env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    path: "/api/v1/auth",
+  };
+
+  res.cookie("refreshToken", newRefreshToken, cookieOptions);
+
+  sendSuccess(res, "Token refreshed", { accessToken: newAccessToken });
 });
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
   const user = await authService.getProfile(userId);
-  sendSuccess(res, 'Profile retrieved successfully', user);
+  sendSuccess(res, "Profile retrieved successfully", user);
 });
 
-export const logout = asyncHandler(async (_req: Request, res: Response) => {
+export const logout = asyncHandler(async (req: Request, res: Response) => {
+  // Revoke in DB if user is authenticated (optional, but good practice)
+  // We can't always rely on req.user existing if the access token is expired,
+  // but we might have the refresh token in the cookie.
+
+  // Try to get userId from request (if auth middleware passed) OR verification of refresh token
+  // For now, let's just clear the cookie. The DB revocation usually requires the user ID.
+  // Ideally, passing the Refresh Token to logout would allow revoking that specific chain.
+
+  if (req.user?.userId) {
+    await authService.logout(req.user.userId);
+  }
+
   // Clear the token cookie
-  res.clearCookie('token', {
+  res.clearCookie("refreshToken", {
     httpOnly: true,
-    secure: true,
-    sameSite: 'none',
+    secure: env.NODE_ENV === "production",
+    sameSite:
+      env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
+    path: "/api/v1/auth",
   });
-  
-  // For JWT-based auth, logout is handled client-side by removing the token
-  // This endpoint clears the cookie and allows for future extensions (e.g., token blacklisting)
-  sendSuccess(res, 'Logout successful', null);
+
+  sendSuccess(res, "Logout successful", null);
 });

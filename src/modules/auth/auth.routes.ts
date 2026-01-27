@@ -1,6 +1,12 @@
-import { Router } from 'express';
-import { register, login, getProfile, logout } from './auth.controller';
-import { authenticate } from '../../middlewares/auth';
+import { Router } from "express";
+import {
+  register,
+  login,
+  getProfile,
+  logout,
+  refresh,
+} from "./auth.controller";
+import { authenticate } from "@/middlewares/auth";
 
 /**
  * @openapi
@@ -49,7 +55,7 @@ import { authenticate } from '../../middlewares/auth';
  *         description: Bad Request
  *       409:
  *         description: Email already registered
- * 
+ *
  * /auth/login:
  *   post:
  *     tags:
@@ -90,10 +96,41 @@ import { authenticate } from '../../middlewares/auth';
  *                   properties:
  *                     user:
  *                       $ref: '#/components/schemas/User'
- *                     token:
+ *                     accessToken:
  *                       type: 'string'
  *                       example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
- * 
+ *
+ * /auth/refresh:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Refresh access token
+ *     description: Exchange a valid refresh token (from httpOnly cookie) for a new access token. Rotates the refresh token securely.
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: 'object'
+ *               properties:
+ *                 success:
+ *                   type: 'boolean'
+ *                   example: true
+ *                 message:
+ *                   type: 'string'
+ *                   example: 'Token refreshed'
+ *                 data:
+ *                   type: 'object'
+ *                   properties:
+ *                     accessToken:
+ *                       type: 'string'
+ *                       example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+ *       400:
+ *         description: Refresh token required
+ *       403:
+ *         description: Invalid or expired refresh token (or reuse detected)
+ *
  * /auth/logout:
  *   post:
  *     tags:
@@ -117,7 +154,7 @@ import { authenticate } from '../../middlewares/auth';
  *                   example: 'Logout successful'
  *                 data:
  *                   type: 'null'
- * 
+ *
  * /auth/profile:
  *   get:
  *     tags:
@@ -142,16 +179,17 @@ import { authenticate } from '../../middlewares/auth';
  *                 data:
  *                   $ref: '#/components/schemas/User'
  */
-import { validate } from '../../middlewares/validate';
-import { loginSchema, registerSchema } from '../../validations/auth.validation';
+import { validate } from "@/middlewares/validate";
+import { loginSchema, registerSchema } from "@/validations/auth.validation";
 
 const router = Router();
 
 // Routes
-router.post('/register', validate(registerSchema), register);
-router.post('/login', validate(loginSchema), login);
-router.post('/logout', authenticate, logout);
-router.get('/profile', authenticate, getProfile);
-router.get('/me', authenticate, getProfile); // Alias for /profile
+router.post("/register", validate(registerSchema), register);
+router.post("/login", validate(loginSchema), login);
+router.post("/refresh", refresh);
+router.post("/logout", authenticate, logout);
+router.get("/profile", authenticate, getProfile);
+router.get("/me", authenticate, getProfile); // Alias for /profile
 
 export default router;

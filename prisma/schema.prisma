@@ -21,6 +21,7 @@ model User {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?     // Soft Delete
+  refreshToken String?       // Hashed Refresh Token for Single Session Strategy
 
   @@map("users")
 }
