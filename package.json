@@ -17,6 +17,8 @@
     "db:migrate": "bunx prisma migrate dev",
     "db:studio": "bunx prisma studio",
     "db:seed": "bun run prisma/seed.ts",
+    "test": "bun test",
+    "test:load": "bun test src/tests/performance.test.ts",
     "prepare": "husky"
   },
   "devDependencies": {

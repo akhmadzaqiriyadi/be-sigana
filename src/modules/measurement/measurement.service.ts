@@ -1,5 +1,5 @@
 import prisma from "../../config/db";
-import { Posisi, Status } from "@prisma/client";
+import { Posisi, Status, Prisma } from "@prisma/client";
 import { NotFoundError } from "../../utils/ApiError";
 import { calculateAnthropometry } from "../../utils/zscore/calculator";
 
@@ -130,7 +130,7 @@ export class MeasurementService {
         bb_u_status: zScoreResult.bb_u_status,
         tb_u_status: zScoreResult.tb_u_status,
         bb_tb_status: zScoreResult.bb_tb_status,
-        statusAkhir: zScoreResult.statusAkhir,
+        statusAkhir: zScoreResult.statusAkhir as Status,
       },
       include: {
         balita: {
@@ -151,7 +151,7 @@ export class MeasurementService {
   }
 
   async syncFromOffline(measurements: SyncMeasurementInput[]) {
-    const localIds = measurements.map((m) => m.localId).filter((id) => id);
+    const localIds = measurements.map((m) => m.localId).filter(Boolean);
     const existing = await prisma.measurement.findMany({
       where: { localId: { in: localIds } },
       select: { id: true, localId: true },
@@ -167,8 +167,8 @@ export class MeasurementService {
     });
     const balitaMap = new Map(balitas.map((b) => [b.id, b]));
 
-    const toCreate: any[] = [];
-    const updatePromises: any[] = [];
+    const toCreate: Prisma.MeasurementCreateManyInput[] = [];
+    const updatePromises: Prisma.PrismaPromise<any>[] = [];
 
     for (const m of measurements) {
       const balita = balitaMap.get(m.balitaId);
@@ -221,7 +221,7 @@ export class MeasurementService {
   }
 
   async getDeltaSync(lastSync: Date, relawanId?: string) {
-    const where: any = {
+    const where: Prisma.MeasurementWhereInput = {
       OR: [{ updatedAt: { gt: lastSync } }, { deletedAt: { gt: lastSync } }],
     };
 
@@ -307,7 +307,7 @@ export class MeasurementService {
     let months = (today.getFullYear() - birth.getFullYear()) * 12;
     months -= birth.getMonth();
     months += today.getMonth();
-    return months <= 0 ? 0 : months;
+    return Math.max(0, months);
   }
 }
 
