@@ -17,15 +17,45 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
-  const page = parseInt(String(req.query.page)) || 1;
-  const limit = parseInt(String(req.query.limit)) || 10;
+  // Extract page query parameter
+  let pageString = "1";
+  if (typeof req.query.page === "string") {
+    pageString = req.query.page;
+  } else if (
+    Array.isArray(req.query.page) &&
+    typeof req.query.page[0] === "string"
+  ) {
+    pageString = req.query.page[0];
+  }
+  const page = Number.parseInt(pageString) || 1;
 
-  const search = req.query.search ? String(req.query.search) : undefined;
+  // Extract limit query parameter
+  let limitString = "10";
+  if (typeof req.query.limit === "string") {
+    limitString = req.query.limit;
+  } else if (
+    Array.isArray(req.query.limit) &&
+    typeof req.query.limit[0] === "string"
+  ) {
+    limitString = req.query.limit[0];
+  }
+  const limit = Number.parseInt(limitString) || 10;
+
+  // Extract search query parameter
+  let search: string | undefined = undefined;
+  if (typeof req.query.search === "string") {
+    search = req.query.search;
+  } else if (
+    Array.isArray(req.query.search) &&
+    typeof req.query.search[0] === "string"
+  ) {
+    search = req.query.search[0];
+  }
 
   // Handle Role: strictly validate against Enum
   let role: Role | undefined = undefined;
-  if (req.query.role && String(req.query.role).trim() !== "") {
-    const rawRole = String(req.query.role).trim();
+  if (typeof req.query.role === "string" && req.query.role.trim() !== "") {
+    const rawRole = req.query.role.trim();
     if (Object.values(Role).includes(rawRole as Role)) {
       role = rawRole as Role;
     }

@@ -15,7 +15,7 @@ export const authenticate = (
     let token: string | undefined;
 
     // Check for token in Authorization header first
-    if (authHeader && authHeader.startsWith("Bearer ")) {
+    if (authHeader?.startsWith("Bearer ")) {
       const headerToken = authHeader.split(" ")[1];
       // Only use header token if it's not 'undefined' or empty string
       if (
@@ -28,7 +28,7 @@ export const authenticate = (
     }
 
     // Fall back to cookie if no valid header token
-    if (!token && req.cookies && req.cookies.token) {
+    if (!token && req.cookies?.token) {
       token = req.cookies.token;
     }
 

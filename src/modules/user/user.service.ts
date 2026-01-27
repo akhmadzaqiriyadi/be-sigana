@@ -174,29 +174,9 @@ export class UserService {
   }
 
   async updateProfile(id: string, data: UpdateProfileInput) {
-    const user = await prisma.user.findFirst({
-      where: {
-        id,
-        deletedAt: null,
-      },
-    });
-
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
-
-    return prisma.user.update({
-      where: { id },
-      data,
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        isVerified: true,
-        createdAt: true,
-      },
-    });
+    // Delegate to update method to avoid code duplication
+    // UpdateProfileInput is a subset of UpdateUserInput (only 'name')
+    return this.update(id, data);
   }
 
   async verifyUser(id: string) {
