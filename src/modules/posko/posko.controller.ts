@@ -14,12 +14,7 @@ export const getAllPoskos = asyncHandler(
       : undefined;
 
     const result = await poskoService.findAll(page, limit, villageId, search);
-    sendSuccess(
-      res,
-      "Poskos retrieved successfully",
-      result.poskos,
-      result.meta
-    );
+    sendSuccess(res, "Data posko berhasil diambil", result.poskos, result.meta);
   }
 );
 
@@ -27,7 +22,7 @@ export const getPoskoById = asyncHandler(
   async (req: Request, res: Response) => {
     const id = parseInt(String(req.params.id));
     const posko = await poskoService.findById(id);
-    sendSuccess(res, "Posko retrieved successfully", posko);
+    sendSuccess(res, "Data posko berhasil diambil", posko);
   }
 );
 
@@ -35,7 +30,7 @@ export const createPosko = asyncHandler(async (req: Request, res: Response) => {
   const { name, villageId, latitude, longitude } = req.body;
 
   if (!name || !villageId) {
-    throw new BadRequestError("Name and villageId are required");
+    throw new BadRequestError("Nama dan villageId wajib diisi");
   }
 
   const posko = await poskoService.create({
@@ -44,7 +39,7 @@ export const createPosko = asyncHandler(async (req: Request, res: Response) => {
     latitude: latitude ? parseFloat(String(latitude)) : undefined,
     longitude: longitude ? parseFloat(String(longitude)) : undefined,
   });
-  sendCreated(res, "Posko created successfully", posko);
+  sendCreated(res, "Posko berhasil dibuat", posko);
 });
 
 export const updatePosko = asyncHandler(async (req: Request, res: Response) => {
@@ -58,16 +53,16 @@ export const updatePosko = asyncHandler(async (req: Request, res: Response) => {
     longitude:
       longitude !== undefined ? parseFloat(String(longitude)) : undefined,
   });
-  sendSuccess(res, "Posko updated successfully", posko);
+  sendSuccess(res, "Posko berhasil diperbarui", posko);
 });
 
 export const deletePosko = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id));
   await poskoService.delete(id);
-  sendSuccess(res, "Posko deleted successfully");
+  sendSuccess(res, "Posko berhasil dihapus");
 });
 
 export const getMapData = asyncHandler(async (_req: Request, res: Response) => {
   const poskos = await poskoService.getMapData();
-  sendSuccess(res, "Map data retrieved successfully", poskos);
+  sendSuccess(res, "Data peta berhasil diambil", poskos);
 });

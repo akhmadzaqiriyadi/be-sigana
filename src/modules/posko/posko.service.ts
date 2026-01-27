@@ -77,7 +77,7 @@ export class PoskoService {
     });
 
     if (!posko) {
-      throw new NotFoundError("Posko not found");
+      throw new NotFoundError("Posko tidak ditemukan");
     }
 
     return posko;
@@ -90,7 +90,7 @@ export class PoskoService {
     });
 
     if (!village) {
-      throw new NotFoundError("Village not found");
+      throw new NotFoundError("Desa tidak ditemukan");
     }
 
     return prisma.posko.create({
@@ -111,7 +111,7 @@ export class PoskoService {
     const posko = await prisma.posko.findUnique({ where: { id } });
 
     if (!posko) {
-      throw new NotFoundError("Posko not found");
+      throw new NotFoundError("Posko tidak ditemukan");
     }
 
     if (data.villageId) {
@@ -120,7 +120,7 @@ export class PoskoService {
       });
 
       if (!village) {
-        throw new NotFoundError("Village not found");
+        throw new NotFoundError("Desa tidak ditemukan");
       }
     }
 
@@ -143,11 +143,11 @@ export class PoskoService {
     const posko = await prisma.posko.findUnique({ where: { id } });
 
     if (!posko) {
-      throw new NotFoundError("Posko not found");
+      throw new NotFoundError("Posko tidak ditemukan");
     }
 
     await prisma.posko.delete({ where: { id } });
-    return { message: "Posko deleted successfully" };
+    return { message: "Posko berhasil dihapus" };
   }
 
   async getMapData() {

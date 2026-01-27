@@ -22,7 +22,7 @@ export const getAllBalitas = asyncHandler(
     });
     sendSuccess(
       res,
-      "Balitas retrieved successfully",
+      "Data balita berhasil diambil",
       result.balitas,
       result.meta
     );
@@ -32,7 +32,7 @@ export const getAllBalitas = asyncHandler(
 export const getBalitaById = asyncHandler(
   async (req: Request, res: Response) => {
     const balita = await balitaService.findById(String(req.params.id));
-    sendSuccess(res, "Balita retrieved successfully", balita);
+    sendSuccess(res, "Data balita berhasil diambil", balita);
   }
 );
 
@@ -55,12 +55,12 @@ export const createBalita = asyncHandler(
       !villageId
     ) {
       throw new BadRequestError(
-        "namaAnak, namaOrtu, tanggalLahir, jenisKelamin, and villageId are required"
+        "namaAnak, namaOrtu, tanggalLahir, jenisKelamin, dan villageId wajib diisi"
       );
     }
 
     if (!["L", "P"].includes(jenisKelamin)) {
-      throw new BadRequestError("jenisKelamin must be L or P");
+      throw new BadRequestError("jenisKelamin harus L atau P");
     }
 
     const balita = await balitaService.create({
@@ -71,7 +71,7 @@ export const createBalita = asyncHandler(
       villageId: parseInt(String(villageId)),
       poskoId: poskoId ? parseInt(String(poskoId)) : undefined,
     });
-    sendCreated(res, "Balita created successfully", balita);
+    sendCreated(res, "Data balita berhasil dibuat", balita);
   }
 );
 
@@ -94,13 +94,13 @@ export const updateBalita = asyncHandler(
       villageId: villageId ? parseInt(String(villageId)) : undefined,
       poskoId: poskoId ? parseInt(String(poskoId)) : undefined,
     });
-    sendSuccess(res, "Balita updated successfully", balita);
+    sendSuccess(res, "Data balita berhasil diperbarui", balita);
   }
 );
 
 export const deleteBalita = asyncHandler(
   async (req: Request, res: Response) => {
     await balitaService.delete(String(req.params.id));
-    sendSuccess(res, "Balita deleted successfully");
+    sendSuccess(res, "Data balita berhasil dihapus");
   }
 );

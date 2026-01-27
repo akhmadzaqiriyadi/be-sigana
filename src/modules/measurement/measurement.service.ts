@@ -99,7 +99,7 @@ export class MeasurementService {
     });
 
     if (!measurement) {
-      throw new NotFoundError("Measurement not found");
+      throw new NotFoundError("Data pengukuran tidak ditemukan");
     }
 
     return measurement;
@@ -112,7 +112,7 @@ export class MeasurementService {
     });
 
     if (!balita) {
-      throw new NotFoundError("Balita not found");
+      throw new NotFoundError("Data balita tidak ditemukan");
     }
 
     // Calculate Z-Score and status using WHO LMS Standard
@@ -294,11 +294,11 @@ export class MeasurementService {
     const measurement = await prisma.measurement.findUnique({ where: { id } });
 
     if (!measurement) {
-      throw new NotFoundError("Measurement not found");
+      throw new NotFoundError("Data pengukuran tidak ditemukan");
     }
 
     await prisma.measurement.delete({ where: { id } });
-    return { message: "Measurement deleted successfully" };
+    return { message: "Data pengukuran berhasil dihapus" };
   }
 
   private calculateAgeInMonths(birthDate: Date): number {

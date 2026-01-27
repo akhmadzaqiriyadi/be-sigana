@@ -37,7 +37,7 @@ export const getAllMeasurements = asyncHandler(
     );
     sendSuccess(
       res,
-      "Measurements retrieved successfully",
+      "Data pengukuran berhasil diambil",
       result.measurements,
       result.meta
     );
@@ -49,7 +49,7 @@ export const getMeasurementById = asyncHandler(
     const measurement = await measurementService.findById(
       String(req.params.id)
     );
-    sendSuccess(res, "Measurement retrieved successfully", measurement);
+    sendSuccess(res, "Data pengukuran berhasil diambil", measurement);
   }
 );
 
@@ -74,12 +74,12 @@ export const createMeasurement = asyncHandler(
       !posisiUkur
     ) {
       throw new BadRequestError(
-        "balitaId, beratBadan, tinggiBadan, lingkarKepala, lila, and posisiUkur are required"
+        "balitaId, beratBadan, tinggiBadan, lingkarKepala, lila, dan posisiUkur wajib diisi"
       );
     }
 
     if (!["TERLENTANG", "BERDIRI"].includes(posisiUkur)) {
-      throw new BadRequestError("posisiUkur must be TERLENTANG or BERDIRI");
+      throw new BadRequestError("posisiUkur harus TERLENTANG atau BERDIRI");
     }
 
     const measurement = await measurementService.create({
@@ -93,7 +93,7 @@ export const createMeasurement = asyncHandler(
       localId,
     });
 
-    sendCreated(res, "Measurement created successfully", measurement);
+    sendCreated(res, "Data pengukuran berhasil dibuat", measurement);
   }
 );
 
@@ -102,7 +102,7 @@ export const syncMeasurements = asyncHandler(
     const { measurements } = req.body;
 
     if (!measurements || !Array.isArray(measurements)) {
-      throw new BadRequestError("measurements array is required");
+      throw new BadRequestError("array measurements wajib diisi");
     }
 
     // Add relawanId to each measurement
@@ -117,7 +117,7 @@ export const syncMeasurements = asyncHandler(
     const results = await measurementService.syncFromOffline(
       measurementsWithRelawan
     );
-    sendSuccess(res, "Measurements synced successfully", results);
+    sendSuccess(res, "Data pengukuran berhasil disinkronisasi", results);
   }
 );
 
@@ -126,19 +126,19 @@ export const syncPull = asyncHandler(async (req: Request, res: Response) => {
   const relawanId = req.user!.role === "RELAWAN" ? req.user!.userId : undefined;
 
   const results = await measurementService.getDeltaSync(lastSync, relawanId);
-  sendSuccess(res, "Downstream data retrieved successfully", results);
+  sendSuccess(res, "Data downstream berhasil diambil", results);
 });
 
 export const getStatistics = asyncHandler(
   async (_req: Request, res: Response) => {
     const statistics = await measurementService.getStatistics();
-    sendSuccess(res, "Statistics retrieved successfully", statistics);
+    sendSuccess(res, "Statistik berhasil diambil", statistics);
   }
 );
 
 export const deleteMeasurement = asyncHandler(
   async (req: Request, res: Response) => {
     await measurementService.delete(String(req.params.id));
-    sendSuccess(res, "Measurement deleted successfully");
+    sendSuccess(res, "Data pengukuran berhasil dihapus");
   }
 );

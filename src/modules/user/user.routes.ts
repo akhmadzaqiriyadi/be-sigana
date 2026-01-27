@@ -40,7 +40,7 @@ import {
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: 'Users retrieved successfully'
+ *                   example: 'Data pengguna berhasil diambil'
  *                 data:
  *                   type: array
  *                   items:
@@ -53,7 +53,7 @@ import {
  *               $ref: '#/components/schemas/Error'
  *             example:
  *               success: false
- *               message: 'Access denied. Admin role required.'
+ *               message: 'Akses ditolak. Memerlukan peran Admin.'
  *   post:
  *     tags:
  *       - User
@@ -104,7 +104,7 @@ import {
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: 'User created successfully'
+ *                   example: 'Pengguna berhasil dibuat'
  *                 data:
  *                   $ref: '#/components/schemas/User'
  *       409:
@@ -142,7 +142,7 @@ import {
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: 'Profile updated successfully'
+ *                   example: 'Profil berhasil diperbarui'
  *                 data:
  *                   $ref: '#/components/schemas/User'
  *
@@ -195,7 +195,7 @@ import {
  *                   example: true
  *                 message:
  *                   type: string
- *                   example: 'User verified successfully'
+ *                   example: 'Pengguna berhasil diverifikasi'
  *       404:
  *         description: User not found
  */

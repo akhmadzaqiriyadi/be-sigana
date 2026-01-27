@@ -33,7 +33,7 @@ export const authenticate = (
     }
 
     if (!token) {
-      throw new UnauthorizedError("Access token required");
+      throw new UnauthorizedError("Access token wajib diisi");
     }
 
     const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
@@ -42,7 +42,7 @@ export const authenticate = (
     next();
   } catch (error) {
     if (error instanceof jwt.JsonWebTokenError) {
-      next(new UnauthorizedError("Invalid or expired token"));
+      next(new UnauthorizedError("Token tidak valid atau kadaluarsa"));
     } else {
       next(error);
     }
@@ -52,12 +52,12 @@ export const authenticate = (
 export const authorize = (...roles: Role[]) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
-      next(new UnauthorizedError("Not authenticated"));
+      next(new UnauthorizedError("Belum terautentikasi"));
       return;
     }
 
     if (!roles.includes(req.user.role)) {
-      next(new ForbiddenError("Insufficient permissions"));
+      next(new ForbiddenError("Hak akses tidak memadai"));
       return;
     }
 

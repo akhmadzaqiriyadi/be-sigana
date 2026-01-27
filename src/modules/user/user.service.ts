@@ -35,7 +35,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictError("Email already registered");
+      throw new ConflictError("Email sudah terdaftar");
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -141,7 +141,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError("Pengguna tidak ditemukan");
     }
 
     return user;
@@ -156,7 +156,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError("Pengguna tidak ditemukan");
     }
 
     return prisma.user.update({
@@ -192,7 +192,7 @@ export class UserService {
     });
 
     if (!user) {
-      throw new NotFoundError("User not found");
+      throw new NotFoundError("Pengguna tidak ditemukan");
     }
 
     // Soft Delete
@@ -200,7 +200,7 @@ export class UserService {
       where: { id },
       data: { deletedAt: new Date() },
     });
-    return { message: "User deleted successfully" };
+    return { message: "Pengguna berhasil dihapus" };
   }
 
   async getPendingUsers() {

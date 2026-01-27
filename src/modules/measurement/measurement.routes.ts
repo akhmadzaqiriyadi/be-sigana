@@ -107,7 +107,7 @@ import { authenticate, authorize } from "../../middlewares/auth";
  *               type: object
  *               properties:
  *                 success: { type: boolean, example: true }
- *                 message: { type: string, example: 'Synced 5 measurements' }
+ *                 message: { type: string, example: 'Data pengukuran berhasil disinkronisasi' }
  *                 data:
  *                   type: array
  *                   items: { $ref: '#/components/schemas/Measurement' }

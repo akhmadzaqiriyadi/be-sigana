@@ -13,7 +13,7 @@ export const createUser = asyncHandler(async (req: Request, res: Response) => {
     role,
     isVerified,
   });
-  sendCreated(res, "User created successfully", user);
+  sendCreated(res, "Pengguna berhasil dibuat", user);
 });
 
 export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
@@ -75,12 +75,12 @@ export const getAllUsers = asyncHandler(async (req: Request, res: Response) => {
     role,
     isVerified,
   });
-  sendSuccess(res, "Users retrieved successfully", result.users, result.meta);
+  sendSuccess(res, "Data pengguna berhasil diambil", result.users, result.meta);
 });
 
 export const getUserById = asyncHandler(async (req: Request, res: Response) => {
   const user = await userService.findById(String(req.params.id));
-  sendSuccess(res, "User retrieved successfully", user);
+  sendSuccess(res, "Data pengguna berhasil diambil", user);
 });
 
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
@@ -90,7 +90,7 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
     role,
     isVerified,
   });
-  sendSuccess(res, "User updated successfully", user);
+  sendSuccess(res, "Data pengguna berhasil diperbarui", user);
 });
 
 export const updateProfile = asyncHandler(
@@ -99,23 +99,23 @@ export const updateProfile = asyncHandler(
     const { name } = req.body;
 
     const user = await userService.updateProfile(userId, { name });
-    sendSuccess(res, "Profile updated successfully", user);
+    sendSuccess(res, "Profil berhasil diperbarui", user);
   }
 );
 
 export const verifyUser = asyncHandler(async (req: Request, res: Response) => {
   const user = await userService.verifyUser(String(req.params.id));
-  sendSuccess(res, "User verified successfully", user);
+  sendSuccess(res, "Pengguna berhasil diverifikasi", user);
 });
 
 export const deleteUser = asyncHandler(async (req: Request, res: Response) => {
   await userService.delete(String(req.params.id));
-  sendSuccess(res, "User deleted successfully");
+  sendSuccess(res, "Pengguna berhasil dihapus");
 });
 
 export const getPendingUsers = asyncHandler(
   async (_req: Request, res: Response) => {
     const users = await userService.getPendingUsers();
-    sendSuccess(res, "Pending users retrieved successfully", users);
+    sendSuccess(res, "Data pengguna tertunda berhasil diambil", users);
   }
 );

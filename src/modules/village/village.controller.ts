@@ -13,7 +13,7 @@ export const getAllVillages = asyncHandler(
     const result = await villageService.findAll(page, limit, search);
     sendSuccess(
       res,
-      "Villages retrieved successfully",
+      "Data desa berhasil diambil",
       result.villages,
       result.meta
     );
@@ -24,7 +24,7 @@ export const getVillageById = asyncHandler(
   async (req: Request, res: Response) => {
     const id = parseInt(String(req.params.id));
     const village = await villageService.findById(id);
-    sendSuccess(res, "Village retrieved successfully", village);
+    sendSuccess(res, "Data desa berhasil diambil", village);
   }
 );
 
@@ -33,11 +33,11 @@ export const createVillage = asyncHandler(
     const { name, districts } = req.body;
 
     if (!name || !districts) {
-      throw new BadRequestError("Name and districts are required");
+      throw new BadRequestError("Nama dan kecamatan wajib diisi");
     }
 
     const village = await villageService.create({ name, districts });
-    sendCreated(res, "Village created successfully", village);
+    sendCreated(res, "Desa berhasil dibuat", village);
   }
 );
 
@@ -47,7 +47,7 @@ export const updateVillage = asyncHandler(
     const { name, districts } = req.body;
 
     const village = await villageService.update(id, { name, districts });
-    sendSuccess(res, "Village updated successfully", village);
+    sendSuccess(res, "Desa berhasil diperbarui", village);
   }
 );
 
@@ -55,6 +55,6 @@ export const deleteVillage = asyncHandler(
   async (req: Request, res: Response) => {
     const id = parseInt(String(req.params.id));
     await villageService.delete(id);
-    sendSuccess(res, "Village deleted successfully");
+    sendSuccess(res, "Desa berhasil dihapus");
   }
 );

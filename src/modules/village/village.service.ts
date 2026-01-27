@@ -67,7 +67,7 @@ export class VillageService {
     });
 
     if (!village) {
-      throw new NotFoundError("Village not found");
+      throw new NotFoundError("Desa tidak ditemukan");
     }
 
     return village;
@@ -83,7 +83,7 @@ export class VillageService {
     const village = await prisma.village.findUnique({ where: { id } });
 
     if (!village) {
-      throw new NotFoundError("Village not found");
+      throw new NotFoundError("Desa tidak ditemukan");
     }
 
     return prisma.village.update({
@@ -96,11 +96,11 @@ export class VillageService {
     const village = await prisma.village.findUnique({ where: { id } });
 
     if (!village) {
-      throw new NotFoundError("Village not found");
+      throw new NotFoundError("Desa tidak ditemukan");
     }
 
     await prisma.village.delete({ where: { id } });
-    return { message: "Village deleted successfully" };
+    return { message: "Desa berhasil dihapus" };
   }
 }
 

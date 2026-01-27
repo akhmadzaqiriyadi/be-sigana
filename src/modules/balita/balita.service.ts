@@ -104,7 +104,7 @@ export class BalitaService {
     });
 
     if (!balita) {
-      throw new NotFoundError("Balita not found");
+      throw new NotFoundError("Data balita tidak ditemukan");
     }
 
     return {
@@ -120,7 +120,7 @@ export class BalitaService {
     });
 
     if (!village) {
-      throw new NotFoundError("Village not found");
+      throw new NotFoundError("Desa tidak ditemukan");
     }
 
     // Verify posko exists if provided
@@ -130,7 +130,7 @@ export class BalitaService {
       });
 
       if (!posko) {
-        throw new NotFoundError("Posko not found");
+        throw new NotFoundError("Posko tidak ditemukan");
       }
     }
 
@@ -163,7 +163,7 @@ export class BalitaService {
     const balita = await prisma.balita.findUnique({ where: { id } });
 
     if (!balita) {
-      throw new NotFoundError("Balita not found");
+      throw new NotFoundError("Data balita tidak ditemukan");
     }
 
     const updated = await prisma.balita.update({
@@ -196,11 +196,11 @@ export class BalitaService {
     const balita = await prisma.balita.findUnique({ where: { id } });
 
     if (!balita) {
-      throw new NotFoundError("Balita not found");
+      throw new NotFoundError("Data balita tidak ditemukan");
     }
 
     await prisma.balita.delete({ where: { id } });
-    return { message: "Balita deleted successfully" };
+    return { message: "Data balita berhasil dihapus" };
   }
 
   private calculateAgeInMonths(birthDate: Date): number {

@@ -24,7 +24,7 @@ export const errorHandler = (
     logger.error(`Prisma Error: ${err.message}`);
     res.status(400).json({
       success: false,
-      message: "Database error occurred",
+      message: "Terjadi kesalahan pada database",
       ...(env.NODE_ENV === "development" && { error: err.message }),
     });
     return;
@@ -34,7 +34,7 @@ export const errorHandler = (
   logger.error(`Unhandled Error: ${err.message}`, { stack: err.stack });
   res.status(500).json({
     success: false,
-    message: "Internal Server Error",
+    message: "Terjadi kesalahan internal server",
     ...(env.NODE_ENV === "development" && {
       error: err.message,
       stack: err.stack,
@@ -49,6 +49,6 @@ export const notFoundHandler = (
 ): void => {
   res.status(404).json({
     success: false,
-    message: `Route ${req.method} ${req.originalUrl} not found`,
+    message: `Rute ${req.method} ${req.originalUrl} tidak ditemukan`,
   });
 };
