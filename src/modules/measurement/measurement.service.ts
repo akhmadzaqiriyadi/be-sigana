@@ -1,7 +1,7 @@
-import prisma from '../../config/db';
-import { Posisi, Status } from '@prisma/client';
-import { NotFoundError } from '../../utils/ApiError';
-import { calculateAnthropometry } from '../../utils/zscore/calculator';
+import prisma from "../../config/db";
+import { Posisi, Status } from "@prisma/client";
+import { NotFoundError } from "../../utils/ApiError";
+import { calculateAnthropometry } from "../../utils/zscore/calculator";
 
 interface CreateMeasurementInput {
   balitaId: string;
@@ -20,7 +20,11 @@ export interface SyncMeasurementInput extends CreateMeasurementInput {
 }
 
 export class MeasurementService {
-  async findAll(page = 1, limit = 10, filters?: { balitaId?: string; relawanId?: string; status?: Status }) {
+  async findAll(
+    page = 1,
+    limit = 10,
+    filters?: { balitaId?: string; relawanId?: string; status?: Status }
+  ) {
     const skip = (page - 1) * limit;
     const where: Record<string, unknown> = {};
 
@@ -50,7 +54,7 @@ export class MeasurementService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.measurement.count({ where }),
     ]);
@@ -87,7 +91,7 @@ export class MeasurementService {
     });
 
     if (!measurement) {
-      throw new NotFoundError('Measurement not found');
+      throw new NotFoundError("Measurement not found");
     }
 
     return measurement;
@@ -100,7 +104,7 @@ export class MeasurementService {
     });
 
     if (!balita) {
-      throw new NotFoundError('Balita not found');
+      throw new NotFoundError("Balita not found");
     }
 
     // Calculate Z-Score and status
@@ -156,14 +160,14 @@ export class MeasurementService {
             isSynced: true,
           },
         });
-        results.push({ action: 'updated', data: updated });
+        results.push({ action: "updated", data: updated });
       } else {
         // Create new
         const created = await this.create({
           ...measurement,
           isSynced: true,
         });
-        results.push({ action: 'created', data: created });
+        results.push({ action: "created", data: created });
       }
     }
 
@@ -174,14 +178,14 @@ export class MeasurementService {
     const [total, byStatus, recentMeasurements] = await Promise.all([
       prisma.measurement.count(),
       prisma.measurement.groupBy({
-        by: ['statusAkhir'],
+        by: ["statusAkhir"],
         _count: {
           statusAkhir: true,
         },
       }),
       prisma.measurement.findMany({
         take: 10,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
         include: {
           balita: {
             select: {
@@ -213,11 +217,11 @@ export class MeasurementService {
     const measurement = await prisma.measurement.findUnique({ where: { id } });
 
     if (!measurement) {
-      throw new NotFoundError('Measurement not found');
+      throw new NotFoundError("Measurement not found");
     }
 
     await prisma.measurement.delete({ where: { id } });
-    return { message: 'Measurement deleted successfully' };
+    return { message: "Measurement deleted successfully" };
   }
 
   private calculateAgeInMonths(birthDate: Date): number {
@@ -242,10 +246,10 @@ export class MeasurementService {
     umurBulan: number;
     jenisKelamin: string;
   }) {
-    // Import helper dynamically or valid scope? 
+    // Import helper dynamically or valid scope?
     // Since we are in class method, better to call imported function.
     // Note: ensure calculateAnthropometry is imported at top of file.
-    
+
     return calculateAnthropometry(
       params.umurBulan,
       params.beratBadan,
@@ -255,11 +259,11 @@ export class MeasurementService {
   }
 
   private getZScoreLabel(zScore: number): string {
-    if (zScore < -3) return 'Sangat Kurang';
-    if (zScore < -2) return 'Kurang';
-    if (zScore <= 2) return 'Normal';
-    if (zScore <= 3) return 'Lebih';
-    return 'Sangat Lebih';
+    if (zScore < -3) return "Sangat Kurang";
+    if (zScore < -2) return "Kurang";
+    if (zScore <= 2) return "Normal";
+    if (zScore <= 3) return "Lebih";
+    return "Sangat Lebih";
   }
 }
 

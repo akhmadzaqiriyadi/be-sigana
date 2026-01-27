@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllPoskos,
   getPoskoById,
@@ -6,8 +6,8 @@ import {
   updatePosko,
   deletePosko,
   getMapData,
-} from './posko.controller';
-import { authenticate, authorize } from '../../middlewares/auth';
+} from "./posko.controller";
+import { authenticate, authorize } from "../../middlewares/auth";
 
 /**
  * @openapi
@@ -77,7 +77,7 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *                   example: true
  *                 data:
  *                   $ref: '#/components/schemas/Posko'
- * 
+ *
  * /poskos/map:
  *   get:
  *     tags:
@@ -99,21 +99,21 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *                   items:
  *                     $ref: '#/components/schemas/Posko'
  */
-import { validate } from '../../middlewares/validate';
-import { createPoskoSchema } from '../../validations/master.validation';
+import { validate } from "../../middlewares/validate";
+import { createPoskoSchema } from "../../validations/master.validation";
 
 const router = Router();
 
 router.use(authenticate);
 
 // Anyone authenticated can read
-router.get('/', getAllPoskos);
-router.get('/map', getMapData);
-router.get('/:id', getPoskoById);
+router.get("/", getAllPoskos);
+router.get("/map", getMapData);
+router.get("/:id", getPoskoById);
 
 // Admin only for write operations
-router.post('/', authorize('ADMIN'), validate(createPoskoSchema), createPosko);
-router.put('/:id', authorize('ADMIN'), updatePosko);
-router.delete('/:id', authorize('ADMIN'), deletePosko);
+router.post("/", authorize("ADMIN"), validate(createPoskoSchema), createPosko);
+router.put("/:id", authorize("ADMIN"), updatePosko);
+router.delete("/:id", authorize("ADMIN"), deletePosko);
 
 export default router;

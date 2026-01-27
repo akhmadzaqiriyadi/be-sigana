@@ -1,32 +1,32 @@
-import { z } from 'zod';
+import { z } from "zod";
 
 export const registerSchema = z.object({
   body: z.object({
-    email: z.string().email('Email tidak valid'),
-    password: z.string().min(6, 'Password minimal 6 karakter'),
-    name: z.string().min(3, 'Nama minimal 3 karakter'),
+    email: z.string().email("Email tidak valid"),
+    password: z.string().min(6, "Password minimal 6 karakter"),
+    name: z.string().min(3, "Nama minimal 3 karakter"),
   }),
 });
 
 export const loginSchema = z.object({
   body: z.object({
-    email: z.string().email('Email tidak valid'),
-    password: z.string().min(1, 'Password wajib diisi'),
+    email: z.string().email("Email tidak valid"),
+    password: z.string().min(1, "Password wajib diisi"),
   }),
 });
 
 export const updateProfileSchema = z.object({
   body: z.object({
-    name: z.string().min(3, 'Nama minimal 3 karakter').optional(),
+    name: z.string().min(3, "Nama minimal 3 karakter").optional(),
   }),
 });
 
 export const createUserSchema = z.object({
   body: z.object({
-    email: z.string().email('Email tidak valid'),
-    password: z.string().min(6, 'Password minimal 6 karakter'),
-    name: z.string().min(3, 'Nama minimal 3 karakter'),
-    role: z.enum(['ADMIN', 'RELAWAN', 'STAKEHOLDER']).optional(),
+    email: z.string().email("Email tidak valid"),
+    password: z.string().min(6, "Password minimal 6 karakter"),
+    name: z.string().min(3, "Nama minimal 3 karakter"),
+    role: z.enum(["ADMIN", "RELAWAN", "STAKEHOLDER"]).optional(),
     isVerified: z.boolean().optional(),
   }),
 });

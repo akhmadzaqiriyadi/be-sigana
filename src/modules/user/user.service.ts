@@ -1,7 +1,7 @@
-import prisma from '../../config/db';
-import bcrypt from 'bcryptjs';
-import { Role } from '@prisma/client';
-import { NotFoundError, ConflictError } from '../../utils/ApiError';
+import prisma from "../../config/db";
+import bcrypt from "bcryptjs";
+import { Role, Prisma } from "@prisma/client";
+import { NotFoundError, ConflictError } from "../../utils/ApiError";
 
 interface UpdateUserInput {
   name?: string;
@@ -35,7 +35,7 @@ export class UserService {
     });
 
     if (existingUser) {
-      throw new ConflictError('Email already registered');
+      throw new ConflictError("Email already registered");
     }
 
     const hashedPassword = await bcrypt.hash(data.password, 12);
@@ -45,7 +45,7 @@ export class UserService {
         email: data.email,
         password: hashedPassword,
         name: data.name,
-        role: data.role || 'RELAWAN',
+        role: data.role || "RELAWAN",
         isVerified: data.isVerified ?? true, // Admin-created users are verified by default
       },
       select: {
@@ -64,14 +64,14 @@ export class UserService {
   async findAll(page = 1, limit = 10, filters?: UserFilters) {
     const skip = (page - 1) * limit;
 
-    const whereClause: any = {
+    const whereClause: Prisma.UserWhereInput = {
       deletedAt: null,
     };
 
     if (filters?.search) {
       whereClause.OR = [
-        { name: { contains: filters.search, mode: 'insensitive' } },
-        { email: { contains: filters.search, mode: 'insensitive' } },
+        { name: { contains: filters.search, mode: "insensitive" } },
+        { email: { contains: filters.search, mode: "insensitive" } },
       ];
     }
 
@@ -96,7 +96,7 @@ export class UserService {
           isVerified: true,
           createdAt: true,
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.user.count({ where: whereClause }),
       prisma.user.count({ where: { deletedAt: null, isVerified: true } }),
@@ -118,9 +118,9 @@ export class UserService {
 
   async findById(id: string) {
     const user = await prisma.user.findFirst({
-      where: { 
-        id, 
-        deletedAt: null 
+      where: {
+        id,
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -135,28 +135,28 @@ export class UserService {
             createdAt: true,
           },
           take: 5,
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
 
     if (!user) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError("User not found");
     }
 
     return user;
   }
 
   async update(id: string, data: UpdateUserInput) {
-    const user = await prisma.user.findFirst({ 
-      where: { 
-        id, 
-        deletedAt: null 
-      } 
+    const user = await prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError("User not found");
     }
 
     return prisma.user.update({
@@ -174,15 +174,15 @@ export class UserService {
   }
 
   async updateProfile(id: string, data: UpdateProfileInput) {
-    const user = await prisma.user.findFirst({ 
-      where: { 
-        id, 
-        deletedAt: null 
-      } 
+    const user = await prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError("User not found");
     }
 
     return prisma.user.update({
@@ -204,30 +204,30 @@ export class UserService {
   }
 
   async delete(id: string) {
-    const user = await prisma.user.findFirst({ 
-      where: { 
-        id, 
-        deletedAt: null 
-      } 
+    const user = await prisma.user.findFirst({
+      where: {
+        id,
+        deletedAt: null,
+      },
     });
 
     if (!user) {
-      throw new NotFoundError('User not found');
+      throw new NotFoundError("User not found");
     }
 
     // Soft Delete
-    await prisma.user.update({ 
+    await prisma.user.update({
       where: { id },
-      data: { deletedAt: new Date() }
+      data: { deletedAt: new Date() },
     });
-    return { message: 'User deleted successfully' };
+    return { message: "User deleted successfully" };
   }
 
   async getPendingUsers() {
     return prisma.user.findMany({
-      where: { 
+      where: {
         isVerified: false,
-        deletedAt: null
+        deletedAt: null,
       },
       select: {
         id: true,
@@ -236,7 +236,7 @@ export class UserService {
         role: true,
         createdAt: true,
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
     });
   }
 }

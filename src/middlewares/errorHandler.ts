@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from 'express';
-import { ApiError } from '../utils/ApiError';
-import { env } from '../config/env';
-import { logger } from '../utils/logger';
+import { Request, Response, NextFunction } from "express";
+import { ApiError } from "../utils/ApiError";
+import { env } from "../config/env";
+import { logger } from "../utils/logger";
 
 export const errorHandler = (
   err: Error,
@@ -14,18 +14,18 @@ export const errorHandler = (
     res.status(err.statusCode).json({
       success: false,
       message: err.message,
-      ...(env.NODE_ENV === 'development' && { stack: err.stack }),
+      ...(env.NODE_ENV === "development" && { stack: err.stack }),
     });
     return;
   }
 
   // Prisma errors
-  if (err.name === 'PrismaClientKnownRequestError') {
+  if (err.name === "PrismaClientKnownRequestError") {
     logger.error(`Prisma Error: ${err.message}`);
     res.status(400).json({
       success: false,
-      message: 'Database error occurred',
-      ...(env.NODE_ENV === 'development' && { error: err.message }),
+      message: "Database error occurred",
+      ...(env.NODE_ENV === "development" && { error: err.message }),
     });
     return;
   }
@@ -34,10 +34,10 @@ export const errorHandler = (
   logger.error(`Unhandled Error: ${err.message}`, { stack: err.stack });
   res.status(500).json({
     success: false,
-    message: 'Internal Server Error',
-    ...(env.NODE_ENV === 'development' && { 
+    message: "Internal Server Error",
+    ...(env.NODE_ENV === "development" && {
       error: err.message,
-      stack: err.stack 
+      stack: err.stack,
     }),
   });
 };

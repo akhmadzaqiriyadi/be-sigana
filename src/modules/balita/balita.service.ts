@@ -1,6 +1,6 @@
-import prisma from '../../config/db';
-import { Gender } from '@prisma/client';
-import { NotFoundError } from '../../utils/ApiError';
+import prisma from "../../config/db";
+import { Gender } from "@prisma/client";
+import { NotFoundError } from "../../utils/ApiError";
 
 interface CreateBalitaInput {
   namaAnak: string;
@@ -21,7 +21,11 @@ interface UpdateBalitaInput {
 }
 
 export class BalitaService {
-  async findAll(page = 1, limit = 10, filters?: { villageId?: number; poskoId?: number }) {
+  async findAll(
+    page = 1,
+    limit = 10,
+    filters?: { villageId?: number; poskoId?: number }
+  ) {
     const skip = (page - 1) * limit;
     const where: Record<string, unknown> = {};
 
@@ -53,11 +57,11 @@ export class BalitaService {
               statusAkhir: true,
               createdAt: true,
             },
-            orderBy: { createdAt: 'desc' },
+            orderBy: { createdAt: "desc" },
             take: 1,
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.balita.count({ where }),
     ]);
@@ -94,13 +98,13 @@ export class BalitaService {
               },
             },
           },
-          orderBy: { createdAt: 'desc' },
+          orderBy: { createdAt: "desc" },
         },
       },
     });
 
     if (!balita) {
-      throw new NotFoundError('Balita not found');
+      throw new NotFoundError("Balita not found");
     }
 
     return {
@@ -116,7 +120,7 @@ export class BalitaService {
     });
 
     if (!village) {
-      throw new NotFoundError('Village not found');
+      throw new NotFoundError("Village not found");
     }
 
     // Verify posko exists if provided
@@ -126,7 +130,7 @@ export class BalitaService {
       });
 
       if (!posko) {
-        throw new NotFoundError('Posko not found');
+        throw new NotFoundError("Posko not found");
       }
     }
 
@@ -159,7 +163,7 @@ export class BalitaService {
     const balita = await prisma.balita.findUnique({ where: { id } });
 
     if (!balita) {
-      throw new NotFoundError('Balita not found');
+      throw new NotFoundError("Balita not found");
     }
 
     const updated = await prisma.balita.update({
@@ -192,11 +196,11 @@ export class BalitaService {
     const balita = await prisma.balita.findUnique({ where: { id } });
 
     if (!balita) {
-      throw new NotFoundError('Balita not found');
+      throw new NotFoundError("Balita not found");
     }
 
     await prisma.balita.delete({ where: { id } });
-    return { message: 'Balita deleted successfully' };
+    return { message: "Balita deleted successfully" };
   }
 
   private calculateAgeInMonths(birthDate: Date): number {

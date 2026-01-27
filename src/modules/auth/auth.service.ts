@@ -76,7 +76,7 @@ export class AuthService {
 
     if (!user.isVerified) {
       throw new BadRequestError(
-        "Akun belum diverifikasi. Harap tunggu persetujuan admin.",
+        "Akun belum diverifikasi. Harap tunggu persetujuan admin."
       );
     }
 
@@ -127,7 +127,7 @@ export class AuthService {
           data: { refreshToken: null },
         });
         throw new ForbiddenError(
-          "Terdeteksi penggunaan ulang refresh token. Silakan login kembali.",
+          "Terdeteksi penggunaan ulang refresh token. Silakan login kembali."
         );
       }
 
@@ -141,8 +141,14 @@ export class AuthService {
       });
 
       return newTokens;
-    } catch (error: any) {
-      if (error.statusCode === 403) throw error;
+    } catch (error: unknown) {
+      if (
+        error instanceof Error &&
+        "statusCode" in error &&
+        error.statusCode === 403
+      ) {
+        throw error;
+      }
       throw new ForbiddenError("Refresh token tidak valid atau kadaluarsa");
     }
   }
@@ -157,7 +163,7 @@ export class AuthService {
   private generateTokens(
     userId: string,
     email: string,
-    role: Role,
+    role: Role
   ): TokenResponse {
     const payload: JwtPayload = { userId, email, role };
 

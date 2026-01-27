@@ -1,4 +1,4 @@
-import { Response } from 'express';
+import { Response } from "express";
 
 interface ApiResponse<T = unknown> {
   success: boolean;
@@ -17,7 +17,7 @@ export const sendResponse = <T>(
   statusCode: number,
   message: string,
   data?: T,
-  meta?: ApiResponse['meta']
+  meta?: ApiResponse["meta"]
 ): Response<ApiResponse<T>> => {
   return res.status(statusCode).json({
     success: statusCode >= 200 && statusCode < 300,
@@ -31,7 +31,7 @@ export const sendSuccess = <T>(
   res: Response,
   message: string,
   data?: T,
-  meta?: ApiResponse['meta']
+  meta?: ApiResponse["meta"]
 ): Response<ApiResponse<T>> => {
   return sendResponse(res, 200, message, data, meta);
 };

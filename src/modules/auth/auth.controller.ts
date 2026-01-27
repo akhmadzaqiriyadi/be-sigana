@@ -16,7 +16,7 @@ export const register = asyncHandler(async (req: Request, res: Response) => {
   sendCreated(
     res,
     "Pendaftaran berhasil. Silakan tunggu persetujuan admin.",
-    user,
+    user
   );
 });
 

@@ -1,12 +1,12 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllVillages,
   getVillageById,
   createVillage,
   updateVillage,
   deleteVillage,
-} from './village.controller';
-import { authenticate, authorize } from '../../middlewares/auth';
+} from "./village.controller";
+import { authenticate, authorize } from "../../middlewares/auth";
 
 /**
  * @openapi
@@ -74,20 +74,25 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *       400:
  *         description: Village already exists
  */
-import { validate } from '../../middlewares/validate';
-import { createVillageSchema } from '../../validations/master.validation';
+import { validate } from "../../middlewares/validate";
+import { createVillageSchema } from "../../validations/master.validation";
 
 const router = Router();
 
 router.use(authenticate);
 
 // Anyone authenticated can read
-router.get('/', getAllVillages);
-router.get('/:id', getVillageById);
+router.get("/", getAllVillages);
+router.get("/:id", getVillageById);
 
 // Admin only for write operations
-router.post('/', authorize('ADMIN'), validate(createVillageSchema), createVillage);
-router.put('/:id', authorize('ADMIN'), updateVillage);
-router.delete('/:id', authorize('ADMIN'), deleteVillage);
+router.post(
+  "/",
+  authorize("ADMIN"),
+  validate(createVillageSchema),
+  createVillage
+);
+router.put("/:id", authorize("ADMIN"), updateVillage);
+router.delete("/:id", authorize("ADMIN"), deleteVillage);
 
 export default router;

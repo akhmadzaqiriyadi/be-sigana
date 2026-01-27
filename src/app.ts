@@ -1,35 +1,37 @@
-import express, { Application } from 'express';
-import cors from 'cors';
-import helmet from 'helmet';
-import morgan from 'morgan';
-import rateLimit from 'express-rate-limit';
-import compression from 'compression';
-import cookieParser from 'cookie-parser';
-import { logger } from './utils/logger';
-import { env } from './config/env';
-import { errorHandler, notFoundHandler } from './middlewares/errorHandler';
-import authRoutes from './modules/auth/auth.routes';
-import userRoutes from './modules/user/user.routes';
-import villageRoutes from './modules/village/village.routes';
-import poskoRoutes from './modules/posko/posko.routes';
-import balitaRoutes from './modules/balita/balita.routes';
-import measurementRoutes from './modules/measurement/measurement.routes';
-import { openApiSpecification } from './config/swagger';
+import express, { Application } from "express";
+import cors from "cors";
+import helmet from "helmet";
+import morgan from "morgan";
+import rateLimit from "express-rate-limit";
+import cookieParser from "cookie-parser";
+import { logger } from "./utils/logger";
+import { env } from "./config/env";
+import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
+import authRoutes from "./modules/auth/auth.routes";
+import userRoutes from "./modules/user/user.routes";
+import villageRoutes from "./modules/village/village.routes";
+import poskoRoutes from "./modules/posko/posko.routes";
+import balitaRoutes from "./modules/balita/balita.routes";
+import measurementRoutes from "./modules/measurement/measurement.routes";
+import { openApiSpecification } from "./config/swagger";
 
 const app: Application = express();
 
 // Middleware
-app.set('trust proxy', 1); // Trust first proxy
+app.set("trust proxy", 1); // Trust first proxy
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({
-  origin: env.NODE_ENV === 'development' 
-    ? ['http://localhost:3000', 'http://localhost:3001'] 
-    : env.FRONTEND_URL || 'http://localhost:3000',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Cookie'],
-  exposedHeaders: ['Set-Cookie'],
-}));
+app.use(
+  cors({
+    origin:
+      env.NODE_ENV === "development"
+        ? ["http://localhost:3000", "http://localhost:3001"]
+        : env.FRONTEND_URL || "http://localhost:3000",
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+    exposedHeaders: ["Set-Cookie"],
+  })
+);
 // Compression disabled - Bun doesn't fully support zlib.createBrotliCompress yet
 // app.use(compression({
 //   filter: (req, res) => {
@@ -50,7 +52,8 @@ const limiter = rateLimit({
 });
 app.use(limiter);
 
-const morganFormat = process.env.NODE_ENV === 'development' ? 'dev' : 'combined';
+const morganFormat =
+  process.env.NODE_ENV === "development" ? "dev" : "combined";
 
 app.use(
   morgan(morganFormat, {
@@ -66,24 +69,24 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Health check
-app.get('/health', (_req, res) => {
-  res.json({ 
-    status: 'ok', 
+app.get("/health", (_req, res) => {
+  res.json({
+    status: "ok",
     timestamp: new Date().toISOString(),
-    environment: env.NODE_ENV 
+    environment: env.NODE_ENV,
   });
 });
 
 // API Routes
-const API_PREFIX = '/api/v1';
+const API_PREFIX = "/api/v1";
 
 // Serve Swagger Spec JSON
-app.get('/docs/json', (_req, res) => {
+app.get("/docs/json", (_req, res) => {
   res.json(openApiSpecification);
 });
 
 // Documentation (Scalar CDN)
-app.get('/docs', (_req, res) => {
+app.get("/docs", (_req, res) => {
   res.send(`
     <!doctype html>
     <html>

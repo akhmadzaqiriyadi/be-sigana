@@ -1,5 +1,5 @@
-import prisma from '../../config/db';
-import { NotFoundError } from '../../utils/ApiError';
+import prisma from "../../config/db";
+import { NotFoundError } from "../../utils/ApiError";
 
 interface CreateVillageInput {
   name: string;
@@ -18,8 +18,8 @@ export class VillageService {
     const where = search
       ? {
           OR: [
-            { name: { contains: search, mode: 'insensitive' as const } },
-            { districts: { contains: search, mode: 'insensitive' as const } },
+            { name: { contains: search, mode: "insensitive" as const } },
+            { districts: { contains: search, mode: "insensitive" as const } },
           ],
         }
       : {};
@@ -37,7 +37,7 @@ export class VillageService {
             },
           },
         },
-        orderBy: { name: 'asc' },
+        orderBy: { name: "asc" },
       }),
       prisma.village.count({ where }),
     ]);
@@ -67,7 +67,7 @@ export class VillageService {
     });
 
     if (!village) {
-      throw new NotFoundError('Village not found');
+      throw new NotFoundError("Village not found");
     }
 
     return village;
@@ -83,7 +83,7 @@ export class VillageService {
     const village = await prisma.village.findUnique({ where: { id } });
 
     if (!village) {
-      throw new NotFoundError('Village not found');
+      throw new NotFoundError("Village not found");
     }
 
     return prisma.village.update({
@@ -96,11 +96,11 @@ export class VillageService {
     const village = await prisma.village.findUnique({ where: { id } });
 
     if (!village) {
-      throw new NotFoundError('Village not found');
+      throw new NotFoundError("Village not found");
     }
 
     await prisma.village.delete({ where: { id } });
-    return { message: 'Village deleted successfully' };
+    return { message: "Village deleted successfully" };
   }
 }
 

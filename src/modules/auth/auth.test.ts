@@ -98,9 +98,14 @@ describe("AuthService", () => {
 
       try {
         await authService.refreshToken(reusedToken);
-      } catch (error: any) {
-        expect(error.statusCode).toBe(403);
-        expect(error.message).toContain("reuse detected");
+      } catch (error: unknown) {
+        expect(error).toHaveProperty("statusCode", 403);
+        expect(error).toHaveProperty("message");
+        if (error && typeof error === "object" && "message" in error) {
+          expect(String(error.message).toLowerCase()).toContain(
+            "penggunaan ulang"
+          );
+        }
       }
 
       // Verify REVOCATION (setting refreshToken to null)
@@ -120,8 +125,8 @@ describe("AuthService", () => {
 
       try {
         await authService.refreshToken("some_token");
-      } catch (error: any) {
-        expect(error.statusCode).toBe(403);
+      } catch (error: unknown) {
+        expect(error).toHaveProperty("statusCode", 403);
       }
     });
   });

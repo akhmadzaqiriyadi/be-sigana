@@ -1,4 +1,4 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   createUser,
   getAllUsers,
@@ -8,11 +8,14 @@ import {
   deleteUser,
   getPendingUsers,
   updateProfile,
-} from './user.controller';
-import { authenticate, authorize } from '../../middlewares/auth';
-import { validate } from '../../middlewares/validate';
-import { verifyUserSchema } from '../../validations/master.validation';
-import { updateProfileSchema, createUserSchema } from '../../validations/auth.validation';
+} from "./user.controller";
+import { authenticate, authorize } from "../../middlewares/auth";
+import { validate } from "../../middlewares/validate";
+import { verifyUserSchema } from "../../validations/master.validation";
+import {
+  updateProfileSchema,
+  createUserSchema,
+} from "../../validations/auth.validation";
 
 /**
  * @openapi
@@ -106,7 +109,7 @@ import { updateProfileSchema, createUserSchema } from '../../validations/auth.va
  *                   $ref: '#/components/schemas/User'
  *       409:
  *         description: Email already registered
- * 
+ *
  * /users/profile:
  *   patch:
  *     tags:
@@ -142,7 +145,7 @@ import { updateProfileSchema, createUserSchema } from '../../validations/auth.va
  *                   example: 'Profile updated successfully'
  *                 data:
  *                   $ref: '#/components/schemas/User'
- * 
+ *
  * /users/pending:
  *   get:
  *     tags:
@@ -166,7 +169,7 @@ import { updateProfileSchema, createUserSchema } from '../../validations/auth.va
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/User'
- * 
+ *
  * /users/{id}/verify:
  *   patch:
  *     tags:
@@ -203,15 +206,20 @@ const router = Router();
 router.use(authenticate);
 
 // Profile routes (Must be before /:id)
-router.patch('/profile', validate(updateProfileSchema), updateProfile);
+router.patch("/profile", validate(updateProfileSchema), updateProfile);
 
 // Admin only routes
-router.post('/', authorize('ADMIN'), validate(createUserSchema), createUser);
-router.get('/', authorize('ADMIN'), getAllUsers);
-router.get('/pending', authorize('ADMIN'), getPendingUsers);
-router.get('/:id', authorize('ADMIN'), getUserById);
-router.put('/:id', authorize('ADMIN'), updateUser);
-router.patch('/:id/verify', authorize('ADMIN'), validate(verifyUserSchema), verifyUser);
-router.delete('/:id', authorize('ADMIN'), deleteUser);
+router.post("/", authorize("ADMIN"), validate(createUserSchema), createUser);
+router.get("/", authorize("ADMIN"), getAllUsers);
+router.get("/pending", authorize("ADMIN"), getPendingUsers);
+router.get("/:id", authorize("ADMIN"), getUserById);
+router.put("/:id", authorize("ADMIN"), updateUser);
+router.patch(
+  "/:id/verify",
+  authorize("ADMIN"),
+  validate(verifyUserSchema),
+  verifyUser
+);
+router.delete("/:id", authorize("ADMIN"), deleteUser);
 
 export default router;

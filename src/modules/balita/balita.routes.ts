@@ -1,12 +1,12 @@
-import { Router } from 'express';
+import { Router } from "express";
 import {
   getAllBalitas,
   getBalitaById,
   createBalita,
   updateBalita,
   deleteBalita,
-} from './balita.controller';
-import { authenticate, authorize } from '../../middlewares/auth';
+} from "./balita.controller";
+import { authenticate, authorize } from "../../middlewares/auth";
 
 /**
  * @openapi
@@ -83,7 +83,7 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *               properties:
  *                 success: { type: boolean, example: true }
  *                 data: { $ref: '#/components/schemas/Balita' }
- * 
+ *
  * /balitas/{id}:
  *   get:
  *     tags:
@@ -108,20 +108,25 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *       404:
  *         description: Balita not found
  */
-import { validate } from '../../middlewares/validate';
-import { createBalitaSchema } from '../../validations/master.validation';
+import { validate } from "../../middlewares/validate";
+import { createBalitaSchema } from "../../validations/master.validation";
 
 const router = Router();
 
 router.use(authenticate);
 
 // Relawan can read and create
-router.get('/', getAllBalitas);
-router.get('/:id', getBalitaById);
-router.post('/', authorize('RELAWAN', 'ADMIN'), validate(createBalitaSchema), createBalita);
+router.get("/", getAllBalitas);
+router.get("/:id", getBalitaById);
+router.post(
+  "/",
+  authorize("RELAWAN", "ADMIN"),
+  validate(createBalitaSchema),
+  createBalita
+);
 
 // Admin only for update and delete
-router.put('/:id', authorize('ADMIN'), updateBalita);
-router.delete('/:id', authorize('ADMIN'), deleteBalita);
+router.put("/:id", authorize("ADMIN"), updateBalita);
+router.delete("/:id", authorize("ADMIN"), deleteBalita);
 
 export default router;

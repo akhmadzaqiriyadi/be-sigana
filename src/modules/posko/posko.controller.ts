@@ -1,32 +1,41 @@
-import { Request, Response } from 'express';
-import { asyncHandler } from '../../middlewares/asyncHandler';
-import { poskoService } from './posko.service';
-import { sendSuccess, sendCreated } from '../../utils/response';
-import { BadRequestError } from '../../utils/ApiError';
+import { Request, Response } from "express";
+import { asyncHandler } from "../../middlewares/asyncHandler";
+import { poskoService } from "./posko.service";
+import { sendSuccess, sendCreated } from "../../utils/response";
+import { BadRequestError } from "../../utils/ApiError";
 
-export const getAllPoskos = asyncHandler(async (req: Request, res: Response) => {
-  const page = parseInt(String(req.query.page)) || 1;
-  const limit = parseInt(String(req.query.limit)) || 10;
-  const search = req.query.search ? String(req.query.search) : undefined;
-  const villageId = req.query.villageId
-    ? parseInt(String(req.query.villageId))
-    : undefined;
+export const getAllPoskos = asyncHandler(
+  async (req: Request, res: Response) => {
+    const page = parseInt(String(req.query.page)) || 1;
+    const limit = parseInt(String(req.query.limit)) || 10;
+    const search = req.query.search ? String(req.query.search) : undefined;
+    const villageId = req.query.villageId
+      ? parseInt(String(req.query.villageId))
+      : undefined;
 
-  const result = await poskoService.findAll(page, limit, villageId, search);
-  sendSuccess(res, 'Poskos retrieved successfully', result.poskos, result.meta);
-});
+    const result = await poskoService.findAll(page, limit, villageId, search);
+    sendSuccess(
+      res,
+      "Poskos retrieved successfully",
+      result.poskos,
+      result.meta
+    );
+  }
+);
 
-export const getPoskoById = asyncHandler(async (req: Request, res: Response) => {
-  const id = parseInt(String(req.params.id));
-  const posko = await poskoService.findById(id);
-  sendSuccess(res, 'Posko retrieved successfully', posko);
-});
+export const getPoskoById = asyncHandler(
+  async (req: Request, res: Response) => {
+    const id = parseInt(String(req.params.id));
+    const posko = await poskoService.findById(id);
+    sendSuccess(res, "Posko retrieved successfully", posko);
+  }
+);
 
 export const createPosko = asyncHandler(async (req: Request, res: Response) => {
   const { name, villageId, latitude, longitude } = req.body;
 
   if (!name || !villageId) {
-    throw new BadRequestError('Name and villageId are required');
+    throw new BadRequestError("Name and villageId are required");
   }
 
   const posko = await poskoService.create({
@@ -35,7 +44,7 @@ export const createPosko = asyncHandler(async (req: Request, res: Response) => {
     latitude: latitude ? parseFloat(String(latitude)) : undefined,
     longitude: longitude ? parseFloat(String(longitude)) : undefined,
   });
-  sendCreated(res, 'Posko created successfully', posko);
+  sendCreated(res, "Posko created successfully", posko);
 });
 
 export const updatePosko = asyncHandler(async (req: Request, res: Response) => {
@@ -46,18 +55,19 @@ export const updatePosko = asyncHandler(async (req: Request, res: Response) => {
     name,
     villageId: villageId ? parseInt(String(villageId)) : undefined,
     latitude: latitude !== undefined ? parseFloat(String(latitude)) : undefined,
-    longitude: longitude !== undefined ? parseFloat(String(longitude)) : undefined,
+    longitude:
+      longitude !== undefined ? parseFloat(String(longitude)) : undefined,
   });
-  sendSuccess(res, 'Posko updated successfully', posko);
+  sendSuccess(res, "Posko updated successfully", posko);
 });
 
 export const deletePosko = asyncHandler(async (req: Request, res: Response) => {
   const id = parseInt(String(req.params.id));
   await poskoService.delete(id);
-  sendSuccess(res, 'Posko deleted successfully');
+  sendSuccess(res, "Posko deleted successfully");
 });
 
 export const getMapData = asyncHandler(async (_req: Request, res: Response) => {
   const poskos = await poskoService.getMapData();
-  sendSuccess(res, 'Map data retrieved successfully', poskos);
+  sendSuccess(res, "Map data retrieved successfully", poskos);
 });

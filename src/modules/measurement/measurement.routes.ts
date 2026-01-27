@@ -1,6 +1,10 @@
-import { Router } from 'express';
-import { validate } from '../../middlewares/validate';
-import { createMeasurementSchema, getMeasurementSchema, syncMeasurementSchema } from '../../validations/measurement.validation';
+import { Router } from "express";
+import { validate } from "../../middlewares/validate";
+import {
+  createMeasurementSchema,
+  getMeasurementSchema,
+  syncMeasurementSchema,
+} from "../../validations/measurement.validation";
 import {
   getAllMeasurements,
   getMeasurementById,
@@ -8,8 +12,8 @@ import {
   syncMeasurements,
   getStatistics,
   deleteMeasurement,
-} from './measurement.controller';
-import { authenticate, authorize } from '../../middlewares/auth';
+} from "./measurement.controller";
+import { authenticate, authorize } from "../../middlewares/auth";
 
 /**
  * @openapi
@@ -65,7 +69,7 @@ import { authenticate, authorize } from '../../middlewares/auth';
  *               properties:
  *                 success: { type: boolean, example: true }
  *                 data: { $ref: '#/components/schemas/Measurement' }
- * 
+ *
  * /measurements/sync:
  *   post:
  *     tags:
@@ -111,15 +115,25 @@ const router = Router();
 router.use(authenticate);
 
 // Read access for all authenticated users
-router.get('/', validate(getMeasurementSchema), getAllMeasurements);
-router.get('/statistics', authorize('ADMIN', 'STAKEHOLDER'), getStatistics);
-router.get('/:id', getMeasurementById);
+router.get("/", validate(getMeasurementSchema), getAllMeasurements);
+router.get("/statistics", authorize("ADMIN", "STAKEHOLDER"), getStatistics);
+router.get("/:id", getMeasurementById);
 
 // Relawan and Admin can create measurements
-router.post('/', authorize('RELAWAN', 'ADMIN'), validate(createMeasurementSchema), createMeasurement);
-router.post('/sync', authorize('RELAWAN', 'ADMIN'), validate(syncMeasurementSchema), syncMeasurements);
+router.post(
+  "/",
+  authorize("RELAWAN", "ADMIN"),
+  validate(createMeasurementSchema),
+  createMeasurement
+);
+router.post(
+  "/sync",
+  authorize("RELAWAN", "ADMIN"),
+  validate(syncMeasurementSchema),
+  syncMeasurements
+);
 
 // Admin only for delete
-router.delete('/:id', authorize('ADMIN'), deleteMeasurement);
+router.delete("/:id", authorize("ADMIN"), deleteMeasurement);
 
 export default router;

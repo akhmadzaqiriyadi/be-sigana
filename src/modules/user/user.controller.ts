@@ -70,7 +70,7 @@ export const updateProfile = asyncHandler(
 
     const user = await userService.updateProfile(userId, { name });
     sendSuccess(res, "Profile updated successfully", user);
-  },
+  }
 );
 
 export const verifyUser = asyncHandler(async (req: Request, res: Response) => {
@@ -87,5 +87,5 @@ export const getPendingUsers = asyncHandler(
   async (_req: Request, res: Response) => {
     const users = await userService.getPendingUsers();
     sendSuccess(res, "Pending users retrieved successfully", users);
-  },
+  }
 );

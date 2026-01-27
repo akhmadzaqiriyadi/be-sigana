@@ -1,6 +1,6 @@
-import { Prisma } from '@prisma/client';
-import prisma from '../../config/db';
-import { NotFoundError } from '../../utils/ApiError';
+import { Prisma } from "@prisma/client";
+import prisma from "../../config/db";
+import { NotFoundError } from "../../utils/ApiError";
 
 interface CreatePoskoInput {
   name: string;
@@ -21,7 +21,7 @@ export class PoskoService {
     const skip = (page - 1) * limit;
     const where: Prisma.PoskoWhereInput = {
       ...(villageId && { villageId }),
-      ...(search && { name: { contains: search, mode: 'insensitive' } }),
+      ...(search && { name: { contains: search, mode: "insensitive" } }),
     };
 
     const [poskos, total] = await Promise.all([
@@ -43,7 +43,7 @@ export class PoskoService {
             },
           },
         },
-        orderBy: { createdAt: 'desc' },
+        orderBy: { createdAt: "desc" },
       }),
       prisma.posko.count({ where }),
     ]);
@@ -77,7 +77,7 @@ export class PoskoService {
     });
 
     if (!posko) {
-      throw new NotFoundError('Posko not found');
+      throw new NotFoundError("Posko not found");
     }
 
     return posko;
@@ -90,7 +90,7 @@ export class PoskoService {
     });
 
     if (!village) {
-      throw new NotFoundError('Village not found');
+      throw new NotFoundError("Village not found");
     }
 
     return prisma.posko.create({
@@ -111,7 +111,7 @@ export class PoskoService {
     const posko = await prisma.posko.findUnique({ where: { id } });
 
     if (!posko) {
-      throw new NotFoundError('Posko not found');
+      throw new NotFoundError("Posko not found");
     }
 
     if (data.villageId) {
@@ -120,7 +120,7 @@ export class PoskoService {
       });
 
       if (!village) {
-        throw new NotFoundError('Village not found');
+        throw new NotFoundError("Village not found");
       }
     }
 
@@ -143,11 +143,11 @@ export class PoskoService {
     const posko = await prisma.posko.findUnique({ where: { id } });
 
     if (!posko) {
-      throw new NotFoundError('Posko not found');
+      throw new NotFoundError("Posko not found");
     }
 
     await prisma.posko.delete({ where: { id } });
-    return { message: 'Posko deleted successfully' };
+    return { message: "Posko deleted successfully" };
   }
 
   async getMapData() {
