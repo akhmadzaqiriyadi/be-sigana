@@ -24,7 +24,11 @@ app.use(
   cors({
     origin:
       env.NODE_ENV === "development"
-        ? ["http://localhost:3000", "http://localhost:3001"]
+        ? [
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://localhost:3002",
+          ]
         : env.FRONTEND_URL || "http://localhost:3000",
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
