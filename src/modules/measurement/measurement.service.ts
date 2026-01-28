@@ -1,7 +1,7 @@
-import prisma from "../../config/db";
+import prisma from "@/config/db";
 import { Posisi, Status, Prisma } from "@prisma/client";
-import { NotFoundError } from "../../utils/ApiError";
-import { calculateAnthropometry } from "../../utils/zscore/calculator";
+import { NotFoundError } from "@/utils/ApiError";
+import { calculateAnthropometry } from "@/utils/zscore/calculator";
 
 interface CreateMeasurementInput {
   balitaId: string;

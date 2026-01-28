@@ -7,7 +7,7 @@ import {
   deletePosko,
   getMapData,
 } from "./posko.controller";
-import { authenticate, authorize } from "../../middlewares/auth";
+import { authenticate, authorize } from "@/middlewares/auth";
 
 /**
  * @openapi
@@ -99,8 +99,8 @@ import { authenticate, authorize } from "../../middlewares/auth";
  *                   items:
  *                     $ref: '#/components/schemas/Posko'
  */
-import { validate } from "../../middlewares/validate";
-import { createPoskoSchema } from "../../validations/master.validation";
+import { validate } from "@/middlewares/validate";
+import { createPoskoSchema } from "@/validations/master.validation";
 
 const router = Router();
 

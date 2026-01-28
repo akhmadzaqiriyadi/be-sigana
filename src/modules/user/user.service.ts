@@ -1,7 +1,7 @@
-import prisma from "../../config/db";
+import prisma from "@/config/db";
 import bcrypt from "bcryptjs";
 import { Role, Prisma } from "@prisma/client";
-import { NotFoundError, ConflictError } from "../../utils/ApiError";
+import { NotFoundError, ConflictError } from "@/utils/ApiError";
 
 interface UpdateUserInput {
   name?: string;

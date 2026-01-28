@@ -3,7 +3,7 @@ import {
   measurementService,
   SyncMeasurementInput,
 } from "./measurement.service";
-import prisma from "../../config/db";
+import prisma from "@/config/db";
 import { Posisi } from "@prisma/client";
 
 // Mock prisma and Standards

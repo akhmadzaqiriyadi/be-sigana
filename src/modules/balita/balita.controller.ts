@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../middlewares/asyncHandler";
+import { asyncHandler } from "@/middlewares/asyncHandler";
 import { balitaService } from "./balita.service";
-import { sendSuccess, sendCreated } from "../../utils/response";
-import { BadRequestError } from "../../utils/ApiError";
+import { sendSuccess, sendCreated } from "@/utils/response";
+import { BadRequestError } from "@/utils/ApiError";
 import { Gender } from "@prisma/client";
 
 export const getAllBalitas = asyncHandler(

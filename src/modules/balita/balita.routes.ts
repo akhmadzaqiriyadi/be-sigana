@@ -6,7 +6,7 @@ import {
   updateBalita,
   deleteBalita,
 } from "./balita.controller";
-import { authenticate, authorize } from "../../middlewares/auth";
+import { authenticate, authorize } from "@/middlewares/auth";
 
 /**
  * @openapi
@@ -108,8 +108,8 @@ import { authenticate, authorize } from "../../middlewares/auth";
  *       404:
  *         description: Balita not found
  */
-import { validate } from "../../middlewares/validate";
-import { createBalitaSchema } from "../../validations/master.validation";
+import { validate } from "@/middlewares/validate";
+import { createBalitaSchema } from "@/validations/master.validation";
 
 const router = Router();
 

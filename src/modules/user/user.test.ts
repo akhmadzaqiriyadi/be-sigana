@@ -1,6 +1,6 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { userService } from "./user.service";
-import prisma from "../../config/db";
+import prisma from "@/config/db";
 import { Role } from "@prisma/client";
 
 mock.module("../../config/db", () => ({

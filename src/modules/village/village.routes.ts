@@ -6,7 +6,7 @@ import {
   updateVillage,
   deleteVillage,
 } from "./village.controller";
-import { authenticate, authorize } from "../../middlewares/auth";
+import { authenticate, authorize } from "@/middlewares/auth";
 
 /**
  * @openapi
@@ -74,8 +74,8 @@ import { authenticate, authorize } from "../../middlewares/auth";
  *       400:
  *         description: Village already exists
  */
-import { validate } from "../../middlewares/validate";
-import { createVillageSchema } from "../../validations/master.validation";
+import { validate } from "@/middlewares/validate";
+import { createVillageSchema } from "@/validations/master.validation";
 
 const router = Router();
 

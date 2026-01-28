@@ -9,13 +9,13 @@ import {
   getPendingUsers,
   updateProfile,
 } from "./user.controller";
-import { authenticate, authorize } from "../../middlewares/auth";
-import { validate } from "../../middlewares/validate";
-import { verifyUserSchema } from "../../validations/master.validation";
+import { authenticate, authorize } from "@/middlewares/auth";
+import { validate } from "@/middlewares/validate";
+import { verifyUserSchema } from "@/validations/master.validation";
 import {
   updateProfileSchema,
   createUserSchema,
-} from "../../validations/auth.validation";
+} from "@/validations/auth.validation";
 
 /**
  * @openapi

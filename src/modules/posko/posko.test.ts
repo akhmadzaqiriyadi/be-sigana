@@ -1,6 +1,6 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { poskoService } from "./posko.service";
-import prisma from "../../config/db";
+import prisma from "@/config/db";
 
 mock.module("../../config/db", () => ({
   default: {

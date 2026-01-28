@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { validate } from "../../middlewares/validate";
+import { validate } from "@/middlewares/validate";
 import {
   createMeasurementSchema,
   getMeasurementSchema,
   syncMeasurementSchema,
   syncPullSchema,
-} from "../../validations/measurement.validation";
+} from "@/validations/measurement.validation";
 import {
   getAllMeasurements,
   getMeasurementById,
@@ -15,7 +15,7 @@ import {
   getStatistics,
   deleteMeasurement,
 } from "./measurement.controller";
-import { authenticate, authorize } from "../../middlewares/auth";
+import { authenticate, authorize } from "@/middlewares/auth";
 
 /**
  * @openapi

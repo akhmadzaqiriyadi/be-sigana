@@ -1,5 +1,5 @@
-import prisma from "../../config/db";
-import { NotFoundError } from "../../utils/ApiError";
+import prisma from "@/config/db";
+import { NotFoundError } from "@/utils/ApiError";
 
 interface CreateVillageInput {
   name: string;

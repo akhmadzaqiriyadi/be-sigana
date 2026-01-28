@@ -1,11 +1,11 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../middlewares/asyncHandler";
+import { asyncHandler } from "@/middlewares/asyncHandler";
 import {
   measurementService,
   SyncMeasurementInput,
 } from "./measurement.service";
-import { sendSuccess, sendCreated } from "../../utils/response";
-import { BadRequestError } from "../../utils/ApiError";
+import { sendSuccess, sendCreated } from "@/utils/response";
+import { BadRequestError } from "@/utils/ApiError";
 import { Posisi, Status } from "@prisma/client";
 
 export const getAllMeasurements = asyncHandler(

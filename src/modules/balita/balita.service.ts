@@ -1,6 +1,6 @@
-import prisma from "../../config/db";
+import prisma from "@/config/db";
 import { Gender } from "@prisma/client";
-import { NotFoundError } from "../../utils/ApiError";
+import { NotFoundError } from "@/utils/ApiError";
 
 interface CreateBalitaInput {
   namaAnak: string;

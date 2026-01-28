@@ -1,8 +1,8 @@
 import { Request, Response } from "express";
-import { asyncHandler } from "../../middlewares/asyncHandler";
+import { asyncHandler } from "@/middlewares/asyncHandler";
 import { poskoService } from "./posko.service";
-import { sendSuccess, sendCreated } from "../../utils/response";
-import { BadRequestError } from "../../utils/ApiError";
+import { sendSuccess, sendCreated } from "@/utils/response";
+import { BadRequestError } from "@/utils/ApiError";
 
 export const getAllPoskos = asyncHandler(
   async (req: Request, res: Response) => {

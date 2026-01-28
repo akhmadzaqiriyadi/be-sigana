@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client";
-import prisma from "../../config/db";
-import { NotFoundError } from "../../utils/ApiError";
+import prisma from "@/config/db";
+import { NotFoundError } from "@/utils/ApiError";
 
 interface CreatePoskoInput {
   name: string;
