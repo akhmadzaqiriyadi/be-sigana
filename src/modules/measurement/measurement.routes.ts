@@ -218,7 +218,11 @@ router.use(authenticate);
 // Read access for all authenticated users
 router.get("/", validate(getMeasurementSchema), getAllMeasurements);
 router.get("/sync-pull", validate(syncPullSchema), syncPull);
-router.get("/stats", authorize("ADMIN", "STAKEHOLDER"), getStatistics);
+router.get(
+  "/stats",
+  authorize("ADMIN", "STAKEHOLDER", "RELAWAN"),
+  getStatistics
+);
 router.get("/:id", getMeasurementById);
 
 // Relawan and Admin can create measurements

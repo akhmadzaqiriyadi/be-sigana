@@ -158,6 +158,89 @@ async function main() {
   ]);
   console.log("✅ Balitas created:", balitas.length);
 
+  // Create Relawan Senior (Simulasi User aktif dengan history)
+  const relawanSeniorPassword = await bcrypt.hash("senior123", 12);
+  const relawanSenior = await prisma.user.upsert({
+    where: { email: "senior@sigana.id" },
+    update: {},
+    create: {
+      email: "senior@sigana.id",
+      password: relawanSeniorPassword,
+      name: "Relawan Senior",
+      role: Role.RELAWAN,
+      isVerified: true,
+    },
+  });
+  console.log("✅ Relawan Senior created:", relawanSenior.email);
+
+  // Create Measurements (Riwayat Pengecekan)
+  // Clean existing measurements for idempotency if needed, or just create new ones strictly
+  // but existing DB might prevent dupes if IDs clash. upsert is better if we have fixed IDs.
+
+  const measurements = await Promise.all([
+    prisma.measurement.upsert({
+      where: { id: "meas-1" },
+      update: {},
+      create: {
+        id: "meas-1",
+        balitaId: balitas[0].id, // Ahmad Fauzi
+        relawanId: relawanSenior.id,
+        beratBadan: 8.5,
+        tinggiBadan: 71.0,
+        lingkarKepala: 44.0,
+        lila: 14.0,
+        posisiUkur: "TERLENTANG",
+        bb_u_status: "Gizi Baik",
+        tb_u_status: "Normal",
+        bb_tb_status: "Gizi Baik",
+        statusAkhir: "HIJAU",
+        isSynced: true,
+        createdAt: new Date("2024-01-15T09:00:00Z"),
+      },
+    }),
+    prisma.measurement.upsert({
+      where: { id: "meas-2" },
+      update: {},
+      create: {
+        id: "meas-2",
+        balitaId: balitas[1].id, // Siti Aisyah
+        relawanId: relawanSenior.id,
+        beratBadan: 11.2,
+        tinggiBadan: 85.0,
+        lingkarKepala: 47.0,
+        lila: 15.5,
+        posisiUkur: "BERDIRI",
+        bb_u_status: "Risiko Gizi Lebih",
+        tb_u_status: "Normal",
+        bb_tb_status: "Gizi Baik",
+        statusAkhir: "KUNING",
+        isSynced: true,
+        createdAt: new Date("2024-01-16T10:30:00Z"),
+      },
+    }),
+    prisma.measurement.upsert({
+      where: { id: "meas-3" },
+      update: {},
+      create: {
+        id: "meas-3",
+        balitaId: balitas[0].id, // Ahmad Fauzi (Check ke-2)
+        relawanId: relawanSenior.id,
+        beratBadan: 8.9,
+        tinggiBadan: 73.0,
+        lingkarKepala: 44.5,
+        lila: 14.2,
+        posisiUkur: "TERLENTANG",
+        bb_u_status: "Gizi Baik",
+        tb_u_status: "Normal",
+        bb_tb_status: "Gizi Baik",
+        statusAkhir: "HIJAU",
+        isSynced: true,
+        createdAt: new Date("2024-02-15T09:15:00Z"),
+      },
+    }),
+  ]);
+  console.log("✅ Measurements created:", measurements.length);
+
   console.log("🎉 Seed completed successfully!");
 }
 
