@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import app from "./app";
 import { env } from "./config/env";
 import { prisma } from "./config/db";
@@ -6,6 +7,7 @@ const startServer = async (): Promise<void> => {
   try {
     // Test database connection
     await prisma.$connect();
+    await prisma.$executeRaw`SELECT 1`;
     console.log("✅ Database connected successfully");
 
     app.listen(env.PORT, () => {

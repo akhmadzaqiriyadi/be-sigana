@@ -22,6 +22,7 @@ model User {
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?     // Soft Delete
   refreshToken String?       // Hashed Refresh Token for Single Session Strategy
+  passwordResets PasswordReset[]
 
   @@map("users")
 }
@@ -112,6 +113,18 @@ model Measurement {
   updatedAt     DateTime @updatedAt
 
   @@map("measurements")
+}
+
+model PasswordReset {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique  // Hashed token
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime @default(now())
+
+  @@map("password_resets")
 }
 
 enum Posisi {

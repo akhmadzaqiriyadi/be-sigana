@@ -10,8 +10,21 @@ export const registerSchema = z.object({
 
 export const loginSchema = z.object({
   body: z.object({
-    email: z.string().email("Email tidak valid"),
-    password: z.string().min(1, "Password wajib diisi"),
+    email: z.string().email("Format email tidak valid"),
+    password: z.string().min(1, "Password diperlukan"),
+  }),
+});
+
+export const forgotPasswordSchema = z.object({
+  body: z.object({
+    email: z.string().email("Format email tidak valid"),
+  }),
+});
+
+export const resetPasswordSchema = z.object({
+  body: z.object({
+    token: z.string().min(1, "Token diperlukan"),
+    password: z.string().min(8, "Password minimal 8 karakter"),
   }),
 });
 

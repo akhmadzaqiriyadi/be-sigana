@@ -103,3 +103,22 @@ export const logout = asyncHandler(async (req: Request, res: Response) => {
 
   sendSuccess(res, "Logout berhasil", null);
 });
+
+export const forgotPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { email } = req.body;
+    await authService.forgotPassword(email);
+    sendSuccess(
+      res,
+      "Jika email terdaftar, link reset password telah dikirim."
+    );
+  }
+);
+
+export const resetPassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { token, password } = req.body;
+    await authService.resetPassword(token, password);
+    sendSuccess(res, "Password berhasil diubah. Silakan login kembali.");
+  }
+);

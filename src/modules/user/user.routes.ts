@@ -198,6 +198,161 @@ import {
  *                   example: 'Pengguna berhasil diverifikasi'
  *       404:
  *         description: User not found
+ *
+ * /users/{id}:
+ *   get:
+ *     tags:
+ *       - User
+ *     summary: Get user by ID (Admin only)
+ *     description: Retrieve detailed information about a specific user.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User details retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *   put:
+ *     tags:
+ *       - User
+ *     summary: Update user (Admin only)
+ *     description: Update a user's information.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: 'Updated Name'
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, RELAWAN, STAKEHOLDER]
+ *                 example: 'ADMIN'
+ *               isVerified:
+ *                 type: boolean
+ *                 example: true
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 'Data pengguna berhasil diperbarui'
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *   patch:
+ *     tags:
+ *       - User
+ *     summary: Update user partial (Admin only)
+ *     description: Partially update a user's information.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *                 example: 'Partial Update'
+ *               role:
+ *                 type: string
+ *                 enum: [ADMIN, RELAWAN, STAKEHOLDER]
+ *                 example: 'STAKEHOLDER'
+ *               isVerified:
+ *                 type: boolean
+ *                 example: false
+ *     responses:
+ *       200:
+ *         description: User updated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 'Data pengguna berhasil diperbarui'
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       404:
+ *         description: User not found
+ *   delete:
+ *     tags:
+ *       - User
+ *     summary: Delete user (Admin only)
+ *     description: Soft delete a user.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: User deleted successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: 'Pengguna berhasil dihapus'
+ *       404:
+ *         description: User not found
  */
 
 const router = Router();
@@ -213,6 +368,7 @@ router.post("/", authorize("ADMIN"), validate(createUserSchema), createUser);
 router.get("/", authorize("ADMIN"), getAllUsers);
 router.get("/pending", authorize("ADMIN"), getPendingUsers);
 router.get("/:id", authorize("ADMIN"), getUserById);
+router.patch("/:id", authorize("ADMIN"), updateUser);
 router.put("/:id", authorize("ADMIN"), updateUser);
 router.patch(
   "/:id/verify",

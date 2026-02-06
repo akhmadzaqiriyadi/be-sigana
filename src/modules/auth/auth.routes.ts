@@ -5,6 +5,8 @@ import {
   getProfile,
   logout,
   refresh,
+  forgotPassword,
+  resetPassword,
 } from "./auth.controller";
 import { authenticate } from "@/middlewares/auth";
 
@@ -178,9 +180,82 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: 'Profil berhasil diambil'
  *                 data:
  *                   $ref: '#/components/schemas/User'
+
+ *
+ * /auth/forgot-password:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Request password reset link
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: 'object'
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: 'string'
+ *     responses:
+ *       200:
+ *         description: Success (always returns 200 for security)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: 'object'
+ *               properties:
+ *                 success:
+ *                   type: 'boolean'
+ *                   example: true
+ *                 message:
+ *                   type: 'string'
+ *                   example: 'Jika email terdaftar, link reset password telah dikirim.'
+ *
+ * /auth/reset-password:
+ *   post:
+ *     tags:
+ *       - Auth
+ *     summary: Reset password with token
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: 'object'
+ *             required:
+ *               - token
+ *               - password
+ *             properties:
+ *               token:
+ *                 type: 'string'
+ *               password:
+ *                 type: 'string'
+ *     responses:
+ *       200:
+ *         description: Password reset successful
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: 'object'
+ *               properties:
+ *                 success:
+ *                   type: 'boolean'
+ *                   example: true
+ *                 message:
+ *                   type: 'string'
+ *                   example: 'Password berhasil diubah. Silakan login kembali.'
+ *       400:
+ *         description: Invalid or expired token
  */
 import { validate } from "@/middlewares/validate";
-import { loginSchema, registerSchema } from "@/validations/auth.validation";
+import {
+  loginSchema,
+  registerSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+} from "@/validations/auth.validation";
 
 const router = Router();
 
@@ -189,6 +264,9 @@ router.post("/register", validate(registerSchema), register);
 router.post("/login", validate(loginSchema), login);
 router.post("/refresh", refresh);
 router.post("/logout", authenticate, logout);
+
+router.post("/forgot-password", validate(forgotPasswordSchema), forgotPassword);
+router.post("/reset-password", validate(resetPasswordSchema), resetPassword);
 router.get("/profile", authenticate, getProfile);
 router.get("/me", authenticate, getProfile); // Alias for /profile
 

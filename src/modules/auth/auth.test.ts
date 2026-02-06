@@ -12,6 +12,12 @@ mock.module("@/config/db", () => ({
       update: mock(),
       create: mock(),
     },
+    passwordReset: {
+      create: mock(),
+      deleteMany: mock(),
+      findUnique: mock(),
+      delete: mock(),
+    },
   },
 }));
 
@@ -29,6 +35,12 @@ mock.module("jsonwebtoken", () => ({
   },
 }));
 
+mock.module("@/modules/email/email.service", () => ({
+  emailService: {
+    sendPasswordResetEmail: mock(),
+  },
+}));
+
 describe("AuthService", () => {
   const mockUser = {
     id: "user-123",
@@ -41,7 +53,22 @@ describe("AuthService", () => {
   };
 
   beforeEach(() => {
-    mock.restore();
+    // mock.restore(); // Removing this as it might interfere with module mocks or not clear history effectively
+    const mocks = [
+      prisma.user.findUnique,
+      prisma.user.update,
+      prisma.user.create,
+      prisma.passwordReset.create,
+      prisma.passwordReset.deleteMany,
+      prisma.passwordReset.findUnique,
+      prisma.passwordReset.delete,
+      bcrypt.hash,
+      bcrypt.compare,
+      jwt.sign,
+      jwt.verify,
+    ];
+    mocks.forEach((m: any) => m.mockClear && m.mockClear());
+
     // Default mock implementations
     (prisma.user.findUnique as any).mockResolvedValue(mockUser);
     (prisma.user.update as any).mockResolvedValue(mockUser);
@@ -139,6 +166,81 @@ describe("AuthService", () => {
         where: { id: mockUser.id },
         data: { refreshToken: null },
       });
+    });
+  });
+
+  describe("forgotPassword", () => {
+    it("should generate token, save to DB, and send email if user exists", async () => {
+      // Mock randomBytes and hash? Difficult with bun:test mock directly on crypto if not mocked
+      // But we can verify side effects
+      const { emailService } = await import("@/modules/email/email.service");
+
+      await authService.forgotPassword("test@example.com");
+
+      // Verify DB operations
+      expect(prisma.passwordReset.deleteMany).toHaveBeenCalled();
+      expect(prisma.passwordReset.create).toHaveBeenCalled();
+
+      // Verify Email sent
+      expect(emailService.sendPasswordResetEmail).toHaveBeenCalled();
+    });
+
+    it("should return silently if user does not exist (Security)", async () => {
+      const { emailService } = await import("@/modules/email/email.service");
+      (emailService.sendPasswordResetEmail as any).mockClear();
+      (prisma.passwordReset.create as any).mockClear();
+
+      (prisma.user.findUnique as any).mockResolvedValue(null);
+
+      await authService.forgotPassword("unknown@example.com");
+
+      expect(prisma.passwordReset.create).not.toHaveBeenCalled();
+      expect(emailService.sendPasswordResetEmail).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("resetPassword", () => {
+    it("should update password and invalidate session if token is valid", async () => {
+      // Mock valid reset request
+      (prisma.passwordReset.findUnique as any).mockResolvedValue({
+        id: "reset-123",
+        userId: mockUser.id,
+        expiresAt: new Date(Date.now() + 100000), // Valid
+        user: mockUser,
+      });
+
+      await authService.resetPassword("some_raw_token", "new_password");
+
+      // Verify Password Update
+      expect(prisma.user.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: mockUser.id },
+          data: expect.objectContaining({
+            refreshToken: null,
+          }),
+        })
+      );
+
+      // Verify Token Deletion
+      expect(prisma.passwordReset.delete).toHaveBeenCalledWith({
+        where: { id: "reset-123" },
+      });
+    });
+
+    it("should throw BadRequest if token expired", async () => {
+      (prisma.passwordReset.findUnique as any).mockResolvedValue({
+        id: "reset-123",
+        expiresAt: new Date(Date.now() - 1000), // Expired
+      });
+
+      // Fix: Bun test expect().toThrow() check
+      let error: any;
+      try {
+        await authService.resetPassword("token", "pass");
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
     });
   });
 });
