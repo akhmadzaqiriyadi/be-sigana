@@ -43,6 +43,12 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data:
  *                   type: array
  *                   items: { $ref: '#/components/schemas/Measurement' }
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
  *   post:
  *     tags:
  *       - Measurement
@@ -71,6 +77,14 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *               properties:
  *                 success: { type: boolean, example: true }
  *                 data: { $ref: '#/components/schemas/Measurement' }
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal Server Error
  *
  * /measurements/sync:
  *   post:
@@ -111,6 +125,14 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data:
  *                   type: array
  *                   items: { $ref: '#/components/schemas/Measurement' }
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal Server Error
  */
 const router = Router();
 

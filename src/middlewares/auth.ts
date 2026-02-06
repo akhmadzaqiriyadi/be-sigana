@@ -64,3 +64,29 @@ export const authorize = (...roles: Role[]) => {
     next();
   };
 };
+
+export const authorizeAdminOrOwner = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
+  if (!req.user) {
+    next(new UnauthorizedError("Belum terautentikasi"));
+    return;
+  }
+
+  // Admin always allowed
+  if (req.user.role === Role.ADMIN) {
+    next();
+    return;
+  }
+
+  // Check if target ID matches user ID
+  const targetId = req.params.id;
+  if (req.user.userId === targetId) {
+    next();
+    return;
+  }
+
+  next(new ForbiddenError("Hak akses tidak memadai"));
+};

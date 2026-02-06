@@ -37,6 +37,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Posko'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
  *   post:
  *     tags:
  *       - Posko
@@ -77,6 +81,14 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   example: true
  *                 data:
  *                   $ref: '#/components/schemas/Posko'
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden (Admin only)
+ *       500:
+ *         description: Internal Server Error
  *
  * /poskos/map:
  *   get:
@@ -98,6 +110,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Posko'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
  */
 import { validate } from "@/middlewares/validate";
 import { createPoskoSchema } from "@/validations/master.validation";

@@ -36,6 +36,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/Village'
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
  *   post:
  *     tags:
  *       - Village
@@ -72,7 +76,15 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data:
  *                   $ref: '#/components/schemas/Village'
  *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       409:
  *         description: Village already exists
+ *       500:
+ *         description: Internal Server Error
  */
 import { validate } from "@/middlewares/validate";
 import { createVillageSchema } from "@/validations/master.validation";

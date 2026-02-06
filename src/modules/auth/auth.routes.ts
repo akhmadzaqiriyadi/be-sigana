@@ -57,6 +57,19 @@ import { authenticate } from "@/middlewares/auth";
  *         description: Bad Request
  *       409:
  *         description: Email already registered
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Email sudah terdaftar'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *
  * /auth/login:
  *   post:
@@ -101,6 +114,30 @@ import { authenticate } from "@/middlewares/auth";
  *                     accessToken:
  *                       type: 'string'
  *                       example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+ *       400:
+ *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Email dan password wajib diisi'
+ *       401:
+ *         description: Invalid credentials
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Email atau password salah'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *
  * /auth/refresh:
  *   post:
@@ -132,6 +169,19 @@ import { authenticate } from "@/middlewares/auth";
  *         description: Refresh token required
  *       403:
  *         description: Invalid or expired refresh token (or reuse detected)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Token tidak valid atau kadaluarsa'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *
  * /auth/logout:
  *   post:
@@ -156,6 +206,21 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: 'Logout berhasil'
  *                 data:
  *                   type: 'null'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *
  * /auth/profile:
  *   get:
@@ -212,6 +277,21 @@ import { authenticate } from "@/middlewares/auth";
  *                 message:
  *                   type: 'string'
  *                   example: 'Jika email terdaftar, link reset password telah dikirim.'
+ *       400:
+ *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Format email tidak valid'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  *
  * /auth/reset-password:
  *   post:
@@ -248,6 +328,19 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: 'Password berhasil diubah. Silakan login kembali.'
  *       400:
  *         description: Invalid or expired token
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Token tidak valid atau sudah kadaluarsa'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
  */
 import { validate } from "@/middlewares/validate";
 import {

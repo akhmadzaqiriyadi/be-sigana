@@ -9,7 +9,11 @@ import {
   getPendingUsers,
   updateProfile,
 } from "./user.controller";
-import { authenticate, authorize } from "@/middlewares/auth";
+import {
+  authenticate,
+  authorize,
+  authorizeAdminOrOwner,
+} from "@/middlewares/auth";
 import { validate } from "@/middlewares/validate";
 import { verifyUserSchema } from "@/validations/master.validation";
 import {
@@ -45,6 +49,8 @@ import {
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden (Non-Admin)
  *         content:
@@ -54,6 +60,15 @@ import {
  *             example:
  *               success: false
  *               message: 'Akses ditolak. Memerlukan peran Admin.'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *   post:
  *     tags:
  *       - User
@@ -107,8 +122,51 @@ import {
  *                   example: 'Pengguna berhasil dibuat'
  *                 data:
  *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Email wajib diisi'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak. Memerlukan peran Admin.'
  *       409:
  *         description: Email already registered
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Email sudah terdaftar'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *
  * /users/profile:
  *   patch:
@@ -145,6 +203,33 @@ import {
  *                   example: 'Profil berhasil diperbarui'
  *                 data:
  *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Format nama tidak valid'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *
  * /users/pending:
  *   get:
@@ -169,6 +254,33 @@ import {
  *                   type: array
  *                   items:
  *                     $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak. Memerlukan peran Admin.'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *
  * /users/{id}/verify:
  *   patch:
@@ -196,8 +308,51 @@ import {
  *                 message:
  *                   type: string
  *                   example: 'Pengguna berhasil diverifikasi'
+ *       400:
+ *         description: Invalid ID format
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Format ID salah'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
+ *       403:
+ *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak'
  *       404:
  *         description: User not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Pengguna tidak ditemukan'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *
  * /users/{id}:
  *   get:
@@ -226,8 +381,16 @@ import {
  *                   example: true
  *                 data:
  *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Invalid ID format
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal Server Error
  *   put:
  *     tags:
  *       - User
@@ -274,8 +437,16 @@ import {
  *                   example: 'Data pengguna berhasil diperbarui'
  *                 data:
  *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal Server Error
  *   patch:
  *     tags:
  *       - User
@@ -322,8 +493,16 @@ import {
  *                   example: 'Data pengguna berhasil diperbarui'
  *                 data:
  *                   $ref: '#/components/schemas/User'
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal Server Error
  *   delete:
  *     tags:
  *       - User
@@ -351,8 +530,16 @@ import {
  *                 message:
  *                   type: string
  *                   example: 'Pengguna berhasil dihapus'
+ *       400:
+ *         description: Invalid ID format
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
  *       404:
  *         description: User not found
+ *       500:
+ *         description: Internal Server Error
  */
 
 const router = Router();
@@ -368,7 +555,7 @@ router.post("/", authorize("ADMIN"), validate(createUserSchema), createUser);
 router.get("/", authorize("ADMIN"), getAllUsers);
 router.get("/pending", authorize("ADMIN"), getPendingUsers);
 router.get("/:id", authorize("ADMIN"), getUserById);
-router.patch("/:id", authorize("ADMIN"), updateUser);
+router.patch("/:id", authorizeAdminOrOwner, updateUser);
 router.put("/:id", authorize("ADMIN"), updateUser);
 router.patch(
   "/:id/verify",

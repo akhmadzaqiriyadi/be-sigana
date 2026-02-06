@@ -85,11 +85,18 @@ export const getUserById = asyncHandler(async (req: Request, res: Response) => {
 
 export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   const { name, role, isVerified } = req.body;
-  const user = await userService.update(String(req.params.id), {
-    name,
-    role,
-    isVerified,
-  });
+  const currentUserRole = req.user?.role;
+
+  // Prepare update data
+  const updateData: any = { name };
+
+  // Only Admin can update sensitive fields
+  if (currentUserRole === Role.ADMIN) {
+    if (role) updateData.role = role;
+    if (isVerified !== undefined) updateData.isVerified = isVerified;
+  }
+
+  const user = await userService.update(String(req.params.id), updateData);
   sendSuccess(res, "Data pengguna berhasil diperbarui", user);
 });
 

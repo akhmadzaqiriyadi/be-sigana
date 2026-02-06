@@ -50,6 +50,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                     page: { type: integer }
  *                     limit: { type: integer }
  *                     totalPages: { type: integer }
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
  *   post:
  *     tags:
  *       - Balita
@@ -83,6 +87,14 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *               properties:
  *                 success: { type: boolean, example: true }
  *                 data: { $ref: '#/components/schemas/Balita' }
+ *       400:
+ *         description: Validation Error
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       500:
+ *         description: Internal Server Error
  *
  * /balitas/{id}:
  *   get:
@@ -107,6 +119,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data: { $ref: '#/components/schemas/Balita' }
  *       404:
  *         description: Balita not found
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Internal Server Error
  */
 import { validate } from "@/middlewares/validate";
 import { createBalitaSchema } from "@/validations/master.validation";
