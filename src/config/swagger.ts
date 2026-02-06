@@ -106,6 +106,87 @@ const options: swaggerJsdoc.Options = {
       },
     ],
   },
+  paths: {
+    "/measurements/stats": {
+      get: {
+        tags: ["Measurement"],
+        summary: "Get dashboard statistics",
+        security: [
+          {
+            bearerAuth: [],
+          },
+        ],
+        responses: {
+          200: {
+            description: "Statistics retrieved",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    data: {
+                      type: "object",
+                      properties: {
+                        total: { type: "integer", example: 100 },
+                        totalChildrenChecked: {
+                          type: "integer",
+                          example: 85,
+                        },
+                        totalSynced: { type: "integer", example: 50 },
+                        statusCounts: {
+                          type: "object",
+                          properties: {
+                            HIJAU: { type: "integer" },
+                            KUNING: { type: "integer" },
+                            MERAH: { type: "integer" },
+                          },
+                        },
+                        recentMeasurements: {
+                          type: "array",
+                          items: {
+                            $ref: "#/components/schemas/Measurement",
+                          },
+                        },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+          },
+          401: {
+            description: "Unauthorized",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/Error",
+                },
+                example: {
+                  success: false,
+                  message: "Belum terautentikasi",
+                },
+              },
+            },
+          },
+          500: {
+            description: "Internal Server Error",
+            content: {
+              "application/json": {
+                schema: {
+                  $ref: "#/components/schemas/Error",
+                },
+                example: {
+                  success: false,
+                  message: "Terjadi kesalahan pada server",
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  },
   apis: ["./src/modules/**/*.routes.ts", "./src/modules/**/*.ts"], // Path to the API docs
 };
 

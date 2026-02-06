@@ -45,10 +45,31 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   items: { $ref: '#/components/schemas/Measurement' }
  *       400:
  *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Format status tidak valid'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *   post:
  *     tags:
  *       - Measurement
@@ -79,12 +100,40 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data: { $ref: '#/components/schemas/Measurement' }
  *       400:
  *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Berat badan harus berupa angka'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       403:
  *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *
  * /measurements/sync:
  *   post:
@@ -127,12 +176,40 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   items: { $ref: '#/components/schemas/Measurement' }
  *       400:
  *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Format data sync tidak valid'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       403:
  *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  */
 const router = Router();
 
@@ -141,7 +218,7 @@ router.use(authenticate);
 // Read access for all authenticated users
 router.get("/", validate(getMeasurementSchema), getAllMeasurements);
 router.get("/sync-pull", validate(syncPullSchema), syncPull);
-router.get("/statistics", authorize("ADMIN", "STAKEHOLDER"), getStatistics);
+router.get("/stats", authorize("ADMIN", "STAKEHOLDER"), getStatistics);
 router.get("/:id", getMeasurementById);
 
 // Relawan and Admin can create measurements

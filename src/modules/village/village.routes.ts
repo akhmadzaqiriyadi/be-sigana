@@ -38,8 +38,22 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                     $ref: '#/components/schemas/Village'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *   post:
  *     tags:
  *       - Village
@@ -77,14 +91,49 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                   $ref: '#/components/schemas/Village'
  *       400:
  *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Nama desa wajib diisi'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       403:
  *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak'
  *       409:
  *         description: Village already exists
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Desa dengan nama tersebut sudah ada'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  */
 import { validate } from "@/middlewares/validate";
 import { createVillageSchema } from "@/validations/master.validation";

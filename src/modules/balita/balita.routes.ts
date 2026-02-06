@@ -52,8 +52,22 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                     totalPages: { type: integer }
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *   post:
  *     tags:
  *       - Balita
@@ -89,12 +103,40 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data: { $ref: '#/components/schemas/Balita' }
  *       400:
  *         description: Validation Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Nama anak wajib diisi'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       403:
  *         description: Forbidden
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akses ditolak'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  *
  * /balitas/{id}:
  *   get:
@@ -119,10 +161,31 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                 data: { $ref: '#/components/schemas/Balita' }
  *       404:
  *         description: Balita not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Balita tidak ditemukan'
  *       401:
  *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Belum terautentikasi'
  *       500:
  *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Terjadi kesalahan pada server'
  */
 import { validate } from "@/middlewares/validate";
 import { createBalitaSchema } from "@/validations/master.validation";

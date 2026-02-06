@@ -252,26 +252,34 @@ export class MeasurementService {
   }
 
   async getStatistics() {
-    const [total, byStatus, recentMeasurements] = await Promise.all([
-      prisma.measurement.count(),
-      prisma.measurement.groupBy({
-        by: ["statusAkhir"],
-        _count: {
-          statusAkhir: true,
-        },
-      }),
-      prisma.measurement.findMany({
-        take: 10,
-        orderBy: { createdAt: "desc" },
-        include: {
-          balita: {
-            select: {
-              namaAnak: true,
+    const [total, byStatus, recentMeasurements, uniqueChildren, totalSynced] =
+      await Promise.all([
+        prisma.measurement.count(),
+        prisma.measurement.groupBy({
+          by: ["statusAkhir"],
+          _count: {
+            statusAkhir: true,
+          },
+        }),
+        prisma.measurement.findMany({
+          take: 10,
+          orderBy: { createdAt: "desc" },
+          include: {
+            balita: {
+              select: {
+                namaAnak: true,
+              },
             },
           },
-        },
-      }),
-    ]);
+        }),
+        prisma.measurement.findMany({
+          distinct: ["balitaId"],
+          select: { balitaId: true },
+        }),
+        prisma.measurement.count({
+          where: { isSynced: true },
+        }),
+      ]);
 
     const statusCounts = {
       HIJAU: 0,
@@ -285,6 +293,8 @@ export class MeasurementService {
 
     return {
       total,
+      totalChildrenChecked: uniqueChildren.length,
+      totalSynced,
       statusCounts,
       recentMeasurements,
     };

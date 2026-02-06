@@ -34,3 +34,4 @@ process.on("SIGTERM", async () => {
 });
 
 startServer();
+// restart
