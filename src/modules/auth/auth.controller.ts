@@ -39,16 +39,20 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     sameSite:
       env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const), // Lax for local dev ease, None for prod
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: "/api/v1/auth", // Restrict to auth routes
+    path: "/", // Available for all routes
   };
 
   res.cookie("refreshToken", refreshToken, cookieOptions);
+
+  // Debug logging
 
   sendSuccess(res, "Login berhasil", { user, accessToken });
 });
 
 export const refresh = asyncHandler(async (req: Request, res: Response) => {
   const refreshToken = req.cookies.refreshToken;
+
+  // Debug logging
 
   if (!refreshToken) {
     throw new BadRequestError("Refresh token wajib diisi");
@@ -63,7 +67,7 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     sameSite:
       env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
     maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-    path: "/api/v1/auth",
+    path: "/",
   };
 
   res.cookie("refreshToken", newRefreshToken, cookieOptions);

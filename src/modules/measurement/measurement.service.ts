@@ -13,6 +13,11 @@ interface CreateMeasurementInput {
   posisiUkur: Posisi;
   localId?: string;
   isSynced?: boolean;
+  notes?: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  sanitationData?: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  medicalHistoryData?: any;
 }
 
 export interface SyncMeasurementInput extends CreateMeasurementInput {
@@ -168,6 +173,7 @@ export class MeasurementService {
     const balitaMap = new Map(balitas.map((b) => [b.id, b]));
 
     const toCreate: Prisma.MeasurementCreateManyInput[] = [];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatePromises: Prisma.PrismaPromise<any>[] = [];
 
     for (const m of measurements) {
@@ -247,6 +253,9 @@ export class MeasurementService {
         statusAkhir: true,
         updatedAt: true,
         deletedAt: true, // Important for tombstone
+        notes: true,
+        sanitationData: true,
+        medicalHistoryData: true,
       },
     });
   }

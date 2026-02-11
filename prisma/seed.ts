@@ -196,6 +196,21 @@ async function main() {
         statusAkhir: "HIJAU",
         isSynced: true,
         createdAt: new Date("2024-01-15T09:00:00Z"),
+        notes: "Anak sehat, aktif.",
+        sanitationData: {
+          version: 1,
+          answers: {
+            q_air_bersih: true,
+            q_jamban_sehat: true,
+          },
+        },
+        medicalHistoryData: {
+          version: 1,
+          answers: {
+            q_asi_eksklusif: true,
+            q_imunisasi: "Lengkap",
+          },
+        },
       },
     }),
     prisma.measurement.upsert({
@@ -216,6 +231,21 @@ async function main() {
         statusAkhir: "KUNING",
         isSynced: true,
         createdAt: new Date("2024-01-16T10:30:00Z"),
+        notes: "Perlu pemantauan gizi lebih ketat.",
+        sanitationData: {
+          version: 1,
+          answers: {
+            q_air_bersih: false,
+            q_jamban_sehat: true,
+          },
+        },
+        medicalHistoryData: {
+          version: 1,
+          answers: {
+            q_asi_eksklusif: false,
+            q_imunisasi: "Belum Lengkap",
+          },
+        },
       },
     }),
     prisma.measurement.upsert({
@@ -236,6 +266,21 @@ async function main() {
         statusAkhir: "HIJAU",
         isSynced: true,
         createdAt: new Date("2024-02-15T09:15:00Z"),
+        notes: "Kondisi stabil.",
+        sanitationData: {
+          version: 1,
+          answers: {
+            q_air_bersih: true,
+            q_jamban_sehat: true,
+          },
+        },
+        medicalHistoryData: {
+          version: 1,
+          answers: {
+            q_asi_eksklusif: true,
+            q_imunisasi: "Lengkap",
+          },
+        },
       },
     }),
   ]);

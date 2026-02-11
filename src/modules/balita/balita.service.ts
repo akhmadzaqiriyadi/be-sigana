@@ -24,13 +24,19 @@ export class BalitaService {
   async findAll(
     page = 1,
     limit = 10,
-    filters?: { villageId?: number; poskoId?: number }
+    filters?: { villageId?: number; poskoId?: number; search?: string }
   ) {
     const skip = (page - 1) * limit;
     const where: Record<string, unknown> = {};
 
     if (filters?.villageId) where.villageId = filters.villageId;
     if (filters?.poskoId) where.poskoId = filters.poskoId;
+    if (filters?.search) {
+      where.OR = [
+        { namaAnak: { contains: filters.search, mode: "insensitive" } },
+        { namaOrtu: { contains: filters.search, mode: "insensitive" } },
+      ];
+    }
 
     const [balitas, total] = await Promise.all([
       prisma.balita.findMany({
@@ -209,7 +215,7 @@ export class BalitaService {
     let months = (today.getFullYear() - birth.getFullYear()) * 12;
     months -= birth.getMonth();
     months += today.getMonth();
-    return months <= 0 ? 0 : months;
+    return Math.max(0, months);
   }
 }
 

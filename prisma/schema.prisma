@@ -98,6 +98,11 @@ model Measurement {
   lila          Float
   posisiUkur    Posisi // TERLENTANG / BERDIRI
 
+  // Tambahan Questionnaire
+  notes              String?  @db.Text
+  sanitationData     Json?
+  medicalHistoryData Json?
+
   // Output Z-Score (Permenkes 2/2020)
   bb_u_status   String
   tb_u_status   String

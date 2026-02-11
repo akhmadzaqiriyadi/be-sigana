@@ -7,6 +7,7 @@ import {
 import { sendSuccess, sendCreated } from "@/utils/response";
 import { BadRequestError } from "@/utils/ApiError";
 import { Posisi, Status } from "@prisma/client";
+import { validateQuestionnaireResponse } from "@/constants/questionnaires";
 
 export const getAllMeasurements = asyncHandler(
   async (req: Request, res: Response) => {
@@ -63,6 +64,9 @@ export const createMeasurement = asyncHandler(
       lila,
       posisiUkur,
       localId,
+      notes,
+      sanitationData,
+      medicalHistoryData,
     } = req.body;
 
     if (
@@ -82,6 +86,31 @@ export const createMeasurement = asyncHandler(
       throw new BadRequestError("posisiUkur harus TERLENTANG atau BERDIRI");
     }
 
+    // Validate Questionnaire Data
+    if (sanitationData) {
+      const validation = validateQuestionnaireResponse(
+        "sanitation",
+        sanitationData
+      );
+      if (!validation?.success) {
+        throw new BadRequestError(
+          `Format Data Sanitasi Invalid: ${validation?.error}`
+        );
+      }
+    }
+
+    if (medicalHistoryData) {
+      const validation = validateQuestionnaireResponse(
+        "medicalHistory",
+        medicalHistoryData
+      );
+      if (!validation?.success) {
+        throw new BadRequestError(
+          `Format Data Riwayat Kesehatan Invalid: ${validation?.error}`
+        );
+      }
+    }
+
     const measurement = await measurementService.create({
       balitaId,
       relawanId: req.user!.userId,
@@ -91,6 +120,9 @@ export const createMeasurement = asyncHandler(
       lila: Number.parseFloat(String(lila)),
       posisiUkur: posisiUkur as Posisi,
       localId,
+      notes,
+      sanitationData,
+      medicalHistoryData,
     });
 
     sendCreated(res, "Data pengukuran berhasil dibuat", measurement);
@@ -103,6 +135,32 @@ export const syncMeasurements = asyncHandler(
 
     if (!measurements || !Array.isArray(measurements)) {
       throw new BadRequestError("array measurements wajib diisi");
+    }
+
+    // Validate Questionnaire Data for Sync
+    for (const m of measurements) {
+      if (m.sanitationData) {
+        const validation = validateQuestionnaireResponse(
+          "sanitation",
+          m.sanitationData
+        );
+        if (!validation?.success) {
+          throw new BadRequestError(
+            `Sync Failed: Format Data Sanitasi Invalid for localId ${m.localId}`
+          );
+        }
+      }
+      if (m.medicalHistoryData) {
+        const validation = validateQuestionnaireResponse(
+          "medicalHistory",
+          m.medicalHistoryData
+        );
+        if (!validation?.success) {
+          throw new BadRequestError(
+            `Sync Failed: Format Data Riwayat Kesehatan Invalid for localId ${m.localId}`
+          );
+        }
+      }
     }
 
     // Add relawanId to each measurement
