@@ -1,7 +1,7 @@
 import prisma from "@/config/db";
 import { Gender } from "@prisma/client";
 import { NotFoundError } from "@/utils/ApiError";
-
+import { logger } from "@/utils/logger";
 interface CreateBalitaInput {
   namaAnak: string;
   namaOrtu: string;
@@ -311,7 +311,7 @@ export class BalitaService {
           status: "created",
         });
       } catch (error) {
-        console.error("Error syncing balita:", error);
+        logger.error("Error syncing balita:", { error });
         results.push({
           localId: data.localId,
           status: "failed",
