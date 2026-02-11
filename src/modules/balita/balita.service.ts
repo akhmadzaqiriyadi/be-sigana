@@ -217,6 +217,111 @@ export class BalitaService {
     months += today.getMonth();
     return Math.max(0, months);
   }
+
+  async sync(
+    balitas: {
+      localId: string;
+      namaAnak: string;
+      namaOrtu: string;
+      tanggalLahir: string | Date; // Accept string or Date
+      jenisKelamin: Gender;
+      villageId: number;
+      poskoId?: number | null;
+      createdAt?: string;
+    }[]
+  ) {
+    const results = [];
+
+    for (const data of balitas) {
+      // 1. Validation Logic
+      // Verify village exists
+      const village = await prisma.village.findUnique({
+        where: { id: data.villageId },
+      });
+
+      if (!village) {
+        // If village not found, we can't create. Result: error
+        results.push({
+          localId: data.localId,
+          status: "failed",
+          error: `Village ID ${data.villageId} not found`,
+        });
+        continue;
+      }
+
+      // Verify posko if exists
+      if (data.poskoId) {
+        const posko = await prisma.posko.findUnique({
+          where: { id: data.poskoId },
+        });
+        if (!posko) {
+          results.push({
+            localId: data.localId,
+            status: "failed",
+            error: `Posko ID ${data.poskoId} not found`,
+          });
+          continue;
+        }
+      }
+
+      // 2. Deduplication Strategy
+      // Check if balita already exists based on composite key (NamaAnak + NamaOrtu + TanggalLahir + Gender)
+      // This is a heuristic.
+      const birthDate = new Date(data.tanggalLahir);
+
+      const existing = await prisma.balita.findFirst({
+        where: {
+          namaAnak: { equals: data.namaAnak, mode: "insensitive" },
+          namaOrtu: { equals: data.namaOrtu, mode: "insensitive" },
+          tanggalLahir: birthDate,
+          jenisKelamin: data.jenisKelamin,
+        },
+      });
+
+      if (existing) {
+        results.push({
+          localId: data.localId,
+          serverId: existing.id,
+          status: "merged",
+        });
+        continue;
+      }
+
+      // 3. Create New
+      try {
+        const newBalita = await prisma.balita.create({
+          data: {
+            namaAnak: data.namaAnak,
+            namaOrtu: data.namaOrtu,
+            tanggalLahir: birthDate,
+            jenisKelamin: data.jenisKelamin,
+            villageId: data.villageId,
+            poskoId: data.poskoId || null,
+            // We can optionally use createdAt from offline if we want to preserve history
+            // But usually server time is better for consistency unless specified.
+            // Requirement didn't specify strict timestamp sync, so we let default(now()) or use it if important.
+            // Let's stick to default behavior for now, but if offline timestamp is critical, we could add it.
+            // I will assume server time is fine for `createdAt`.
+          },
+        });
+
+        results.push({
+          localId: data.localId,
+          serverId: newBalita.id,
+          status: "created",
+        });
+      } catch (error) {
+        console.error("Error syncing balita:", error);
+        results.push({
+          localId: data.localId,
+          status: "failed",
+          error: "Internal Server Error",
+        });
+      }
+    }
+
+    return results;
+  }
 }
 
 export const balitaService = new BalitaService();

@@ -5,190 +5,61 @@ import {
   createBalita,
   updateBalita,
   deleteBalita,
+  syncBalitas,
 } from "./balita.controller";
 import { authenticate, authorize } from "@/middlewares/auth";
 
 /**
  * @openapi
- * /balitas:
- *   get:
- *     tags:
- *       - Balita
- *     summary: Get all balitas
- *     parameters:
- *       - in: query
- *         name: page
- *         schema:
- *           type: integer
- *       - in: query
- *         name: limit
- *         schema:
- *           type: integer
- *       - in: query
- *         name: villageId
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: List of balitas retrieved
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success:
- *                   type: boolean
- *                   example: true
- *                 data:
- *                   type: array
- *                   items:
- *                     $ref: '#/components/schemas/Balita'
- *                 pagination:
- *                   type: object
- *                   properties:
- *                     total: { type: integer }
- *                     page: { type: integer }
- *                     limit: { type: integer }
- *                     totalPages: { type: integer }
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Belum terautentikasi'
- *       500:
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Terjadi kesalahan pada server'
+ * /balitas/sync:
  *   post:
  *     tags:
  *       - Balita
- *     summary: Create new balita
+ *     summary: Sync offline balita data
  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
  *           schema:
  *             type: object
- *             required:
- *               - namaAnak
- *               - namaOrtu
- *               - tanggalLahir
- *               - jenisKelamin
- *               - villageId
  *             properties:
- *               namaAnak: { type: string, example: 'Ayu Lestari' }
- *               namaOrtu: { type: string, example: 'Siti Aminah' }
- *               tanggalLahir: { type: string, format: 'date', example: '2023-05-15' }
- *               jenisKelamin: { type: string, enum: ['L', 'P'] }
- *               villageId: { type: integer }
- *               poskoId: { type: string, format: 'uuid' }
- *     responses:
- *       201:
- *         description: Balita created successfully
- *         content:
- *           application/json:
- *             schema:
- *               type: object
- *               properties:
- *                 success: { type: boolean, example: true }
- *                 data: { $ref: '#/components/schemas/Balita' }
- *       400:
- *         description: Validation Error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Nama anak wajib diisi'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Belum terautentikasi'
- *       403:
- *         description: Forbidden
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Akses ditolak'
- *       500:
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Terjadi kesalahan pada server'
- *
- * /balitas/{id}:
- *   get:
- *     tags:
- *       - Balita
- *     summary: Get balita by ID
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
+ *               balitas:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     localId: { type: string }
+ *                     namaAnak: { type: string }
+ *                     namaOrtu: { type: string }
+ *                     tanggalLahir: { type: string, format: 'date' }
+ *                     jenisKelamin: { type: string, enum: ['L', 'P'] }
+ *                     villageId: { type: integer }
+ *                     poskoId: { type: integer }
+ *                     createdAt: { type: string, format: 'date-time' }
  *     responses:
  *       200:
- *         description: Balita details
+ *         description: Sync completed
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 success: { type: boolean, example: true }
- *                 data: { $ref: '#/components/schemas/Balita' }
- *       404:
- *         description: Balita not found
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Balita tidak ditemukan'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Belum terautentikasi'
- *       500:
- *         description: Internal Server Error
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Terjadi kesalahan pada server'
+ *                 success: { type: boolean }
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       localId: { type: string }
+ *                       serverId: { type: string }
+ *                       status: { type: string }
+ *                       error: { type: string }
  */
 import { validate } from "@/middlewares/validate";
-import { createBalitaSchema } from "@/validations/master.validation";
+import {
+  createBalitaSchema,
+  syncBalitaSchema,
+} from "@/validations/master.validation";
 
 const router = Router();
 
@@ -196,6 +67,13 @@ router.use(authenticate);
 
 // Relawan can read and create
 router.get("/", getAllBalitas);
+router.post(
+  "/sync",
+  authorize("RELAWAN", "ADMIN"),
+  validate(syncBalitaSchema),
+  syncBalitas
+);
+
 router.get("/:id", getBalitaById);
 router.post(
   "/",

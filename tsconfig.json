@@ -1,8 +1,6 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES2022"
-    ],
+    "lib": ["ES2022", "DOM"],
     "module": "ESNext",
     "target": "ES2022",
     "moduleResolution": "bundler",
@@ -16,22 +14,12 @@
     "declarationMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
-    "types": [
-      "bun-types"
-    ],
+    "types": ["bun-types"],
     "baseUrl": ".",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"]
     }
   },
-  "include": [
-    "src/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "prisma"
-  ]
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "prisma"]
 }

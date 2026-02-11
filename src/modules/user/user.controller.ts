@@ -88,7 +88,9 @@ export const updateUser = asyncHandler(async (req: Request, res: Response) => {
   const currentUserRole = req.user?.role;
 
   // Prepare update data
-  const updateData: any = { name };
+  const updateData: { name: string; role?: Role; isVerified?: boolean } = {
+    name,
+  };
 
   // Only Admin can update sensitive fields
   if (currentUserRole === Role.ADMIN) {

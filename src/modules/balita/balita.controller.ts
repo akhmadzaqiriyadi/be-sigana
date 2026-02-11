@@ -107,3 +107,12 @@ export const deleteBalita = asyncHandler(
     sendSuccess(res, "Data balita berhasil dihapus");
   }
 );
+
+export const syncBalitas = asyncHandler(async (req: Request, res: Response) => {
+  const { balitas } = req.body;
+  const result = await balitaService.sync(balitas);
+
+  // We return 200 OK even if some failed, as it is a batch operation.
+  // The client should check the "status" field of each item.
+  sendSuccess(res, "Sync completed", result);
+});
