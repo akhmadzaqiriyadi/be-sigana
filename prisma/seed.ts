@@ -1,297 +1,240 @@
-import { PrismaClient, Role, Gender } from "@prisma/client";
+import { PrismaClient, Role, Gender, Posisi, Status } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { fakerID_ID as faker } from "@faker-js/faker";
 import { Pool } from "pg";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { config } from "dotenv";
 
 config();
 
-const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const connectionString = process.env.DATABASE_URL;
+const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log("🌱 Starting seed...");
 
-  // Create Admin user
-  const adminPassword = await bcrypt.hash("admin123", 12);
-  const admin = await prisma.user.upsert({
-    where: { email: "admin@sigana.id" },
-    update: {},
-    create: {
-      email: "admin@sigana.id",
-      password: adminPassword,
+  // 1. Clean up database
+  console.log("🧹 Cleaning database...");
+  await prisma.measurement.deleteMany();
+  await prisma.balita.deleteMany();
+  await prisma.posko.deleteMany();
+  await prisma.village.deleteMany();
+  await prisma.user.deleteMany();
+
+  // 2. Create Users
+  console.log("👤 Creating users...");
+  const salt = await bcrypt.genSalt(10);
+  const password = await bcrypt.hash("password123", salt);
+
+  const users = [
+    {
       name: "Admin SiGana",
+      email: "admin@sigana.id",
       role: Role.ADMIN,
+      password,
       isVerified: true,
     },
-  });
-  console.log("✅ Admin created:", admin.email);
-
-  // Create sample Relawan
-  const relawanPassword = await bcrypt.hash("relawan123", 12);
-  const relawan = await prisma.user.upsert({
-    where: { email: "relawan@sigana.id" },
-    update: {},
-    create: {
+    {
+      name: "Budi Santoso",
       email: "relawan@sigana.id",
-      password: relawanPassword,
-      name: "Relawan Demo",
       role: Role.RELAWAN,
+      password,
       isVerified: true,
     },
-  });
-  console.log("✅ Relawan created:", relawan.email);
-
-  // Create sample Stakeholder
-  const stakeholderPassword = await bcrypt.hash("stakeholder123", 12);
-  const stakeholder = await prisma.user.upsert({
-    where: { email: "stakeholder@sigana.id" },
-    update: {},
-    create: {
-      email: "stakeholder@sigana.id",
-      password: stakeholderPassword,
-      name: "Dinas Kesehatan",
+    {
+      name: "Siti Aminah",
+      email: "relawan2@sigana.id",
+      role: Role.RELAWAN,
+      password,
+      isVerified: true,
+    },
+    {
+      name: "Dinas Kesehatan Cianjur",
+      email: "dinkes@sigana.id",
       role: Role.STAKEHOLDER,
+      password,
       isVerified: true,
     },
+  ];
+
+  for (const user of users) {
+    await prisma.user.create({ data: user });
+  }
+
+  const relawanUser = await prisma.user.findUnique({
+    where: { email: "relawan@sigana.id" },
   });
-  console.log("✅ Stakeholder created:", stakeholder.email);
 
-  // Create sample Villages
-  const villages = await Promise.all([
-    prisma.village.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        name: "Desa Sukamaju",
-        districts: "Kecamatan Cianjur",
-      },
-    }),
-    prisma.village.upsert({
-      where: { id: 2 },
-      update: {},
-      create: {
-        name: "Desa Mekarjaya",
-        districts: "Kecamatan Cianjur",
-      },
-    }),
-  ]);
-  console.log("✅ Villages created:", villages.length);
+  // 3. Create Villages (Real Cianjur Districts/Villages sample)
+  console.log("🏘️ Creating villages...");
+  const villageNames = [
+    { name: "Sukamaju", districts: "Cianjur" },
+    { name: "Mekarwangi", districts: "Warungkondang" },
+    { name: "Cijedil", districts: "Cugenang" },
+    { name: "Cibadak", districts: "Cibeber" },
+    { name: "Cirumput", districts: "Cugenang" },
+  ];
 
-  // Create sample Poskos
-  const poskos = await Promise.all([
-    prisma.posko.upsert({
-      where: { id: 1 },
-      update: {},
-      create: {
-        name: "Posko Lapangan Sukamaju",
-        villageId: villages[0].id,
-        latitude: -6.8213,
-        longitude: 107.1338,
-      },
-    }),
-    prisma.posko.upsert({
-      where: { id: 2 },
-      update: {},
-      create: {
-        name: "Posko Mesjid Al-Ikhlas",
-        villageId: villages[0].id,
-        latitude: -6.8225,
-        longitude: 107.1345,
-      },
-    }),
-    prisma.posko.upsert({
-      where: { id: 3 },
-      update: {},
-      create: {
-        name: "Posko Balai Desa Mekarjaya",
-        villageId: villages[1].id,
-        latitude: -6.8301,
-        longitude: 107.1401,
-      },
-    }),
-  ]);
-  console.log("✅ Poskos created:", poskos.length);
+  const villages = [];
+  for (const v of villageNames) {
+    const village = await prisma.village.create({
+      data: v,
+    });
+    villages.push(village);
+  }
 
-  // Create sample Balitas
-  const balitas = await Promise.all([
-    prisma.balita.upsert({
-      where: { id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d" },
-      update: {},
-      create: {
-        id: "a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d",
-        namaAnak: "Ahmad Fauzi",
-        namaOrtu: "Bapak Fauzi",
-        tanggalLahir: new Date("2023-06-15"),
-        jenisKelamin: Gender.L,
-        villageId: villages[0].id,
-        poskoId: poskos[0].id,
-      },
-    }),
-    prisma.balita.upsert({
-      where: { id: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e" },
-      update: {},
-      create: {
-        id: "b2c3d4e5-f6a7-4b8c-9d0e-1f2a3b4c5d6e",
-        namaAnak: "Siti Aisyah",
-        namaOrtu: "Ibu Aisyah",
-        tanggalLahir: new Date("2022-03-20"),
-        jenisKelamin: Gender.P,
-        villageId: villages[0].id,
-        poskoId: poskos[1].id,
-      },
-    }),
-    prisma.balita.upsert({
-      where: { id: "d8fa3980-dd84-4120-bb2a-3dc66440efb6" },
-      update: {},
-      create: {
-        id: "d8fa3980-dd84-4120-bb2a-3dc66440efb6",
-        namaAnak: "Rizki Pratama",
-        namaOrtu: "Bapak Pratama",
-        tanggalLahir: new Date("2024-01-10"),
-        jenisKelamin: Gender.L,
-        villageId: villages[1].id,
-        poskoId: poskos[2].id,
-      },
-    }),
-  ]);
-  console.log("✅ Balitas created:", balitas.length);
-
-  // Create Relawan Senior (Simulasi User aktif dengan history)
-  const relawanSeniorPassword = await bcrypt.hash("senior123", 12);
-  const relawanSenior = await prisma.user.upsert({
-    where: { email: "senior@sigana.id" },
-    update: {},
-    create: {
-      email: "senior@sigana.id",
-      password: relawanSeniorPassword,
-      name: "Relawan Senior",
-      role: Role.RELAWAN,
-      isVerified: true,
-    },
-  });
-  console.log("✅ Relawan Senior created:", relawanSenior.email);
-
-  // Create Measurements (Riwayat Pengecekan)
-  // Clean existing measurements for idempotency if needed, or just create new ones strictly
-  // but existing DB might prevent dupes if IDs clash. upsert is better if we have fixed IDs.
-
-  const measurements = await Promise.all([
-    prisma.measurement.upsert({
-      where: { id: "meas-1" },
-      update: {},
-      create: {
-        id: "meas-1",
-        balitaId: balitas[0].id, // Ahmad Fauzi
-        relawanId: relawanSenior.id,
-        beratBadan: 8.5,
-        tinggiBadan: 71.0,
-        lingkarKepala: 44.0,
-        lila: 14.0,
-        posisiUkur: "TERLENTANG",
-        bb_u_status: "Gizi Baik",
-        tb_u_status: "Normal",
-        bb_tb_status: "Gizi Baik",
-        statusAkhir: "HIJAU",
-        isSynced: true,
-        createdAt: new Date("2024-01-15T09:00:00Z"),
-        notes: "Anak sehat, aktif.",
-        sanitationData: {
-          version: 1,
-          answers: {
-            q_air_bersih: true,
-            q_jamban_sehat: true,
-          },
+  // 4. Create Poskos
+  console.log("camp Creating poskos...");
+  const poskos = [];
+  for (const village of villages) {
+    // Create 1-2 poskos per village
+    const numPoskos = faker.number.int({ min: 1, max: 2 });
+    for (let i = 0; i < numPoskos; i++) {
+      const posko = await prisma.posko.create({
+        data: {
+          name: `Posko ${village.name} ${i + 1}`,
+          villageId: village.id,
+          latitude: faker.location.latitude({ max: -6.7, min: -7.0 }),
+          longitude: faker.location.longitude({ max: 107.2, min: 107.0 }),
         },
-        medicalHistoryData: {
-          version: 1,
-          answers: {
-            q_asi_eksklusif: true,
-            q_imunisasi: "Lengkap",
-          },
-        },
-      },
-    }),
-    prisma.measurement.upsert({
-      where: { id: "meas-2" },
-      update: {},
-      create: {
-        id: "meas-2",
-        balitaId: balitas[1].id, // Siti Aisyah
-        relawanId: relawanSenior.id,
-        beratBadan: 11.2,
-        tinggiBadan: 85.0,
-        lingkarKepala: 47.0,
-        lila: 15.5,
-        posisiUkur: "BERDIRI",
-        bb_u_status: "Risiko Gizi Lebih",
-        tb_u_status: "Normal",
-        bb_tb_status: "Gizi Baik",
-        statusAkhir: "KUNING",
-        isSynced: true,
-        createdAt: new Date("2024-01-16T10:30:00Z"),
-        notes: "Perlu pemantauan gizi lebih ketat.",
-        sanitationData: {
-          version: 1,
-          answers: {
-            q_air_bersih: false,
-            q_jamban_sehat: true,
-          },
-        },
-        medicalHistoryData: {
-          version: 1,
-          answers: {
-            q_asi_eksklusif: false,
-            q_imunisasi: "Belum Lengkap",
-          },
-        },
-      },
-    }),
-    prisma.measurement.upsert({
-      where: { id: "meas-3" },
-      update: {},
-      create: {
-        id: "meas-3",
-        balitaId: balitas[0].id, // Ahmad Fauzi (Check ke-2)
-        relawanId: relawanSenior.id,
-        beratBadan: 8.9,
-        tinggiBadan: 73.0,
-        lingkarKepala: 44.5,
-        lila: 14.2,
-        posisiUkur: "TERLENTANG",
-        bb_u_status: "Gizi Baik",
-        tb_u_status: "Normal",
-        bb_tb_status: "Gizi Baik",
-        statusAkhir: "HIJAU",
-        isSynced: true,
-        createdAt: new Date("2024-02-15T09:15:00Z"),
-        notes: "Kondisi stabil.",
-        sanitationData: {
-          version: 1,
-          answers: {
-            q_air_bersih: true,
-            q_jamban_sehat: true,
-          },
-        },
-        medicalHistoryData: {
-          version: 1,
-          answers: {
-            q_asi_eksklusif: true,
-            q_imunisasi: "Lengkap",
-          },
-        },
-      },
-    }),
-  ]);
-  console.log("✅ Measurements created:", measurements.length);
+      });
+      poskos.push(posko);
+    }
+  }
 
-  console.log("🎉 Seed completed successfully!");
+  // 5. Create Balitas
+  console.log("👶 Creating balitas...");
+  const balitas = [];
+  const numBalitas = 50;
+
+  for (let i = 0; i < numBalitas; i++) {
+    const village = faker.helpers.arrayElement(villages);
+    const availablePoskos = poskos.filter((p) => p.villageId === village.id);
+    const posko =
+      availablePoskos.length > 0
+        ? faker.helpers.arrayElement(availablePoskos)
+        : null;
+
+    // Age 0-59 months
+    const birthDate = faker.date.birthdate({
+      mode: "age",
+      min: 0,
+      max: 4, // 0-4 years old
+    });
+
+    const sex = faker.helpers.arrayElement([Gender.L, Gender.P]);
+
+    const balita = await prisma.balita.create({
+      data: {
+        namaAnak: faker.person.fullName({
+          sex: sex === Gender.L ? "male" : "female",
+        }),
+        namaOrtu: faker.person.fullName(),
+        tanggalLahir: birthDate,
+        jenisKelamin: sex,
+        villageId: village.id,
+        poskoId: posko?.id,
+      },
+    });
+    balitas.push(balita);
+  }
+
+  // 6. Create Measurements
+  console.log("gantungan Creating measurements...");
+  for (const balita of balitas) {
+    // 1-5 measurements per balita
+    const numMeas = faker.number.int({ min: 1, max: 5 });
+    let currentDate = new Date(balita.tanggalLahir);
+
+    for (let i = 0; i < numMeas; i++) {
+      // Advance date by 1-3 months
+      currentDate = new Date(
+        currentDate.setMonth(
+          currentDate.getMonth() + faker.number.int({ min: 1, max: 3 })
+        )
+      );
+      if (currentDate > new Date()) break;
+
+      // Realistic Anthropometry based on Age
+      // Simple logic:
+      // Weight ~ 3 + (age_months * 0.5) +/- variance
+      // Height ~ 50 + (age_months * 0.8) +/- variance
+      const ageMonths =
+        (currentDate.getTime() - balita.tanggalLahir.getTime()) /
+        (1000 * 60 * 60 * 24 * 30.44);
+
+      if (ageMonths < 0) continue;
+
+      const baseWeight = 3.3 + ageMonths * 0.6; // kg
+      const weight = faker.number.float({
+        min: baseWeight * 0.8,
+        max: baseWeight * 1.2,
+        fractionDigits: 1,
+      });
+
+      const baseHeight = 50 + ageMonths * 0.9; // cm
+      const height = faker.number.float({
+        min: baseHeight * 0.9,
+        max: baseHeight * 1.1,
+        fractionDigits: 1,
+      });
+
+      const lila = faker.number.float({
+        min: 11,
+        max: 18,
+        fractionDigits: 1,
+      });
+      const lingkarKepala = faker.number.float({
+        min: 35,
+        max: 50,
+        fractionDigits: 1,
+      });
+
+      // Random status
+      const statusAkhir = faker.helpers.arrayElement(Object.values(Status));
+
+      await prisma.measurement.create({
+        data: {
+          balitaId: balita.id,
+          relawanId: relawanUser?.id || "",
+          beratBadan: weight,
+          tinggiBadan: height,
+          lingkarKepala,
+          lila,
+          posisiUkur: ageMonths < 24 ? Posisi.TERLENTANG : Posisi.BERDIRI,
+          bb_u_status: faker.helpers.arrayElement([
+            "Gizi Baik",
+            "Kurang Gizi",
+            "Gizi Lebih",
+          ]),
+          tb_u_status: faker.helpers.arrayElement([
+            "Normal",
+            "Pendek",
+            "Sangat Pendek",
+          ]),
+          bb_tb_status: faker.helpers.arrayElement([
+            "Gizi Baik",
+            "Gizi Kurang",
+            "Gizi Buruk",
+            "Berisiko Gizi Lebih",
+          ]),
+          statusAkhir: statusAkhir,
+          notes: faker.lorem.sentence(),
+          createdAt: currentDate,
+          updatedAt: currentDate,
+        },
+      });
+    }
+  }
+
+  console.log("✅ Seed completed successfully!");
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Seed error:", e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {
