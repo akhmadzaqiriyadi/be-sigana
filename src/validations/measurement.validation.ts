@@ -32,6 +32,14 @@ export const getMeasurementSchema = z.object({
   query: z.object({
     balitaId: z.string().uuid().optional(),
     status: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
+    updatedAfter: z
+      .string()
+      .datetime({ message: "Format tanggal harus ISO 8601" })
+      .optional(),
+    createdAfter: z
+      .string()
+      .datetime({ message: "Format tanggal harus ISO 8601" })
+      .optional(),
   }),
 });
 

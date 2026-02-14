@@ -8,7 +8,7 @@ import {
   forgotPassword,
   resetPassword,
 } from "./auth.controller";
-import { authenticate } from "@/middlewares/auth";
+import { authenticate, optionalAuthenticate } from "@/middlewares/auth";
 
 /**
  * @openapi
@@ -188,8 +188,7 @@ import { authenticate } from "@/middlewares/auth";
  *     tags:
  *       - Auth
  *     summary: Logout user
- *     security:
- *       - bearerAuth: []
+ *     description: Clears the refresh token cookie and revokes the server session. Authentication is optional — if the access token is expired, logout still succeeds (best-effort DB revocation via refresh token cookie).
  *     responses:
  *       200:
  *         description: Logout successful
@@ -206,15 +205,6 @@ import { authenticate } from "@/middlewares/auth";
  *                   example: 'Logout berhasil'
  *                 data:
  *                   type: 'null'
- *       401:
- *         description: Unauthorized
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
- *             example:
- *               success: false
- *               message: 'Belum terautentikasi'
  *       500:
  *         description: Internal Server Error
  *         content:
@@ -356,7 +346,7 @@ const router = Router();
 router.post("/register", validate(registerSchema), register);
 router.post("/login", validate(loginSchema), login);
 router.post("/refresh", refresh);
-router.post("/logout", authenticate, logout);
+router.post("/logout", optionalAuthenticate, logout);
 
 router.post("/forgot-password", validate(forgotPasswordSchema), forgotPassword);
 router.post("/reset-password", validate(resetPasswordSchema), resetPassword);

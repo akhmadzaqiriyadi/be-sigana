@@ -28,7 +28,13 @@ export class MeasurementService {
   async findAll(
     page = 1,
     limit = 10,
-    filters?: { balitaId?: string; relawanId?: string; status?: Status },
+    filters?: {
+      balitaId?: string;
+      relawanId?: string;
+      status?: Status;
+      updatedAfter?: Date;
+      createdAfter?: Date;
+    },
     currentUser?: { role: string; userId: string }
   ) {
     const skip = (page - 1) * limit;
@@ -44,6 +50,8 @@ export class MeasurementService {
 
     if (filters?.balitaId) where.balitaId = filters.balitaId;
     if (filters?.status) where.statusAkhir = filters.status;
+    if (filters?.updatedAfter) where.updatedAt = { gt: filters.updatedAfter };
+    if (filters?.createdAfter) where.createdAt = { gt: filters.createdAfter };
 
     const [measurements, total] = await Promise.all([
       prisma.measurement.findMany({

@@ -25,6 +25,14 @@ export const getAllMeasurements = asyncHandler(
       typeof req.query.status === "string"
         ? (req.query.status as Status)
         : undefined;
+    const updatedAfter =
+      typeof req.query.updatedAfter === "string"
+        ? new Date(req.query.updatedAfter)
+        : undefined;
+    const createdAfter =
+      typeof req.query.createdAfter === "string"
+        ? new Date(req.query.createdAfter)
+        : undefined;
 
     const result = await measurementService.findAll(
       page,
@@ -33,6 +41,8 @@ export const getAllMeasurements = asyncHandler(
         balitaId,
         relawanId,
         status,
+        updatedAfter,
+        createdAfter,
       },
       req.user as { role: string; userId: string }
     );

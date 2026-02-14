@@ -169,6 +169,34 @@ describe("AuthService", () => {
     });
   });
 
+  describe("logoutByRefreshToken", () => {
+    it("should decode refresh token and nullify session in DB", async () => {
+      (jwt.verify as any).mockReturnValue({ userId: mockUser.id });
+
+      await authService.logoutByRefreshToken("valid_refresh_token");
+
+      expect(jwt.verify).toHaveBeenCalled();
+      expect(prisma.user.update).toHaveBeenCalledWith({
+        where: { id: mockUser.id },
+        data: { refreshToken: null },
+      });
+    });
+
+    it("should throw if refresh token is invalid", async () => {
+      (jwt.verify as any).mockImplementation(() => {
+        throw new Error("invalid token");
+      });
+
+      let error: any;
+      try {
+        await authService.logoutByRefreshToken("invalid_token");
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+    });
+  });
+
   describe("forgotPassword", () => {
     it("should generate token, save to DB, and send email if user exists", async () => {
       // Mock randomBytes and hash? Difficult with bun:test mock directly on crypto if not mocked

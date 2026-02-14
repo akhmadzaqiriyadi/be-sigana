@@ -99,4 +99,105 @@ describe("MeasurementService", () => {
       expect(result.created).toBe(1);
     });
   });
+
+  describe("findAll (Date Filters)", () => {
+    it("should pass updatedAfter filter as { gt } condition", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+      (prisma.measurement.count as any).mockResolvedValue(0);
+
+      const filterDate = new Date("2024-06-01T00:00:00Z");
+
+      await measurementService.findAll(
+        1,
+        10,
+        { updatedAfter: filterDate },
+        { role: "ADMIN", userId: "admin-1" }
+      );
+
+      const callArgs = (prisma.measurement.findMany as any).mock.lastCall[0];
+      expect(callArgs.where.updatedAt).toEqual({ gt: filterDate });
+    });
+
+    it("should pass createdAfter filter as { gt } condition", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+      (prisma.measurement.count as any).mockResolvedValue(0);
+
+      const filterDate = new Date("2024-01-01T00:00:00Z");
+
+      await measurementService.findAll(
+        1,
+        10,
+        { createdAfter: filterDate },
+        { role: "ADMIN", userId: "admin-1" }
+      );
+
+      const callArgs = (prisma.measurement.findMany as any).mock.lastCall[0];
+      expect(callArgs.where.createdAt).toEqual({ gt: filterDate });
+    });
+
+    it("should combine date filters with other filters", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+      (prisma.measurement.count as any).mockResolvedValue(0);
+
+      const updatedDate = new Date("2024-06-01T00:00:00Z");
+      const createdDate = new Date("2024-01-01T00:00:00Z");
+
+      await measurementService.findAll(
+        1,
+        10,
+        {
+          balitaId: "balita-1",
+          updatedAfter: updatedDate,
+          createdAfter: createdDate,
+        },
+        { role: "ADMIN", userId: "admin-1" }
+      );
+
+      const callArgs = (prisma.measurement.findMany as any).mock.lastCall[0];
+      expect(callArgs.where.balitaId).toBe("balita-1");
+      expect(callArgs.where.updatedAt).toEqual({ gt: updatedDate });
+      expect(callArgs.where.createdAt).toEqual({ gt: createdDate });
+    });
+  });
+
+  describe("getDeltaSync", () => {
+    it("should query for records updated or deleted after lastSync", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+
+      const lastSync = new Date("2024-06-01T00:00:00Z");
+
+      await measurementService.getDeltaSync(lastSync);
+
+      const callArgs = (prisma.measurement.findMany as any).mock.lastCall[0];
+      expect(callArgs.where.OR).toEqual([
+        { updatedAt: { gt: lastSync } },
+        { deletedAt: { gt: lastSync } },
+      ]);
+    });
+
+    it("should scope to relawanId when provided", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+
+      const lastSync = new Date("2024-06-01T00:00:00Z");
+
+      await measurementService.getDeltaSync(lastSync, "relawan-1");
+
+      const callArgs = (prisma.measurement.findMany as any).mock.lastCall[0];
+      expect(callArgs.where.relawanId).toBe("relawan-1");
+    });
+
+    it("should select essential sync fields including tombstones", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+
+      const lastSync = new Date("2024-06-01T00:00:00Z");
+
+      await measurementService.getDeltaSync(lastSync);
+
+      const callArgs = (prisma.measurement.findMany as any).mock.lastCall[0];
+      expect(callArgs.select).toHaveProperty("localId", true);
+      expect(callArgs.select).toHaveProperty("deletedAt", true);
+      expect(callArgs.select).toHaveProperty("updatedAt", true);
+      expect(callArgs.select).toHaveProperty("balitaId", true);
+    });
+  });
 });

@@ -84,25 +84,29 @@ export const getProfile = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
-  // Revoke in DB if user is authenticated (optional, but good practice)
-  // We can't always rely on req.user existing if the access token is expired,
-  // but we might have the refresh token in the cookie.
-
-  // Try to get userId from request (if auth middleware passed) OR verification of refresh token
-  // For now, let's just clear the cookie. The DB revocation usually requires the user ID.
-  // Ideally, passing the Refresh Token to logout would allow revoking that specific chain.
-
+  // Try to revoke the session in DB
+  // 1. If access token was valid, we have req.user from optionalAuthenticate
   if (req.user?.userId) {
     await authService.logout(req.user.userId);
+  } else {
+    // 2. Fallback: try to identify user via refresh token cookie
+    const refreshToken = req.cookies.refreshToken;
+    if (refreshToken) {
+      try {
+        await authService.logoutByRefreshToken(refreshToken);
+      } catch {
+        // Best-effort: if refresh token is also invalid, just clear the cookie
+      }
+    }
   }
 
-  // Clear the token cookie
+  // Clear the token cookie — path MUST match the path used when setting it ("/")
   res.clearCookie("refreshToken", {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite:
       env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
-    path: "/api/v1/auth",
+    path: "/",
   });
 
   sendSuccess(res, "Logout berhasil", null);

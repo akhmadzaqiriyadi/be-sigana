@@ -162,6 +162,18 @@ export class AuthService {
     });
   }
 
+  /**
+   * Logout by refresh token — used as fallback when access token is expired.
+   * Decodes the refresh JWT to get userId and revokes the session.
+   */
+  async logoutByRefreshToken(token: string) {
+    const decoded = jwt.verify(token, env.JWT_REFRESH_SECRET) as JwtPayload;
+    await prisma.user.update({
+      where: { id: decoded.userId },
+      data: { refreshToken: null },
+    });
+  }
+
   private generateTokens(
     userId: string,
     email: string,

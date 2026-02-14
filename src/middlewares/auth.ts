@@ -49,6 +49,47 @@ export const authenticate = (
   }
 };
 
+/**
+ * Optional authentication middleware.
+ * Tries to decode the JWT but does NOT throw on failure.
+ * Sets req.user if valid, otherwise leaves it undefined.
+ * Useful for endpoints like logout that should work even with expired tokens.
+ */
+export const optionalAuthenticate = (
+  req: Request,
+  _res: Response,
+  next: NextFunction
+): void => {
+  try {
+    const authHeader = req.headers.authorization;
+    let token: string | undefined;
+
+    if (authHeader?.startsWith("Bearer ")) {
+      const headerToken = authHeader.split(" ")[1];
+      if (
+        headerToken &&
+        headerToken !== "undefined" &&
+        headerToken !== "null"
+      ) {
+        token = headerToken;
+      }
+    }
+
+    if (!token && req.cookies?.token) {
+      token = req.cookies.token;
+    }
+
+    if (token) {
+      const decoded = jwt.verify(token, env.JWT_SECRET) as JwtPayload;
+      req.user = decoded;
+    }
+  } catch {
+    // Token invalid or expired — that's fine, req.user stays undefined
+    req.user = undefined;
+  }
+  next();
+};
+
 export const authorize = (...roles: Role[]) => {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.user) {
