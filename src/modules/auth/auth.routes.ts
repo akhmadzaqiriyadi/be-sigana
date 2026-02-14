@@ -132,6 +132,15 @@ import { authenticate, optionalAuthenticate } from "@/middlewares/auth";
  *             example:
  *               success: false
  *               message: 'Email atau password salah'
+ *       403:
+ *         description: Forbidden (Unverified)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *             example:
+ *               success: false
+ *               message: 'Akun belum diverifikasi. Harap tunggu persetujuan admin.'
  *       500:
  *         description: Internal Server Error
  *         content:

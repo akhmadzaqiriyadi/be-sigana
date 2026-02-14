@@ -210,3 +210,22 @@ export const deleteMeasurement = asyncHandler(
     sendSuccess(res, "Data pengukuran berhasil dihapus");
   }
 );
+
+export const getPublicMeasurement = asyncHandler(
+  async (req: Request, res: Response) => {
+    const result = await measurementService.getPublicInfo(req.params.id);
+    sendSuccess(res, "Data publik berhasil diambil", result);
+  }
+);
+
+export const accessMeasurement = asyncHandler(
+  async (req: Request, res: Response) => {
+    const { dob } = req.body;
+    if (!dob) {
+      throw new BadRequestError("Tanggal lahir wajib diisi");
+    }
+
+    const result = await measurementService.verifyAccess(req.params.id, dob);
+    sendSuccess(res, "Akses berhasil diverifikasi", result.data);
+  }
+);

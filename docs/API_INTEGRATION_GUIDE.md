@@ -9,6 +9,7 @@ This document provides a comprehensive guide for Frontend developers on how to i
 All API responses (GET, POST, PUT, DELETE, PATCH) follow a strict standardized JSON format. You can rely on the `success` field to determine if the request passed or failed.
 
 ### A. Success Response (200, 201)
+
 ```json
 {
   "success": true,
@@ -24,6 +25,7 @@ All API responses (GET, POST, PUT, DELETE, PATCH) follow a strict standardized J
 ```
 
 ### B. Error Response (400, 401, 403, 404, 500)
+
 ```json
 {
   "success": false,
@@ -39,14 +41,17 @@ All API responses (GET, POST, PUT, DELETE, PATCH) follow a strict standardized J
 For list endpoints (e.g., `/users`, `/measurements`), pagination is enabled by default.
 
 ### Request Params
-*   `page`: Page number (default: 1)
-*   `limit`: Items per page (default: 10)
+
+- `page`: Page number (default: 1)
+- `limit`: Items per page (default: 10)
 
 **Example Request:**
 `GET /api/v1/users?page=2&limit=20`
 
 ### Handling Response
+
 Use the `meta` object to build your pagination UI:
+
 ```json
 "meta": {
   "page": 2,          // Current Page
@@ -60,15 +65,15 @@ Use the `meta` object to build your pagination UI:
 
 ## 3. Errors & HTTP Status Codes
 
-| Status Code | Meaning | Handling Strategy |
-| :--- | :--- | :--- |
-| **200 OK** | Success | Show "data". |
-| **201 Created** | Resource Created | Show success message, redirect if needed. |
-| **400 Bad Request** | Validation Error | Show `message` (e.g., "Invalid email format"). |
-| **401 Unauthorized** | Token missing/invalid | **Redirect to Login**. Token expired or cleared. |
-| **403 Forbidden** | Role mismatch | Show "Access Denied". User lacks permission. |
-| **404 Not Found** | ID/Path not found | Show 404 page or "Data not found". |
-| **500 Server Error** | Backend Issue | Show generic error toast ("Something went wrong"). |
+| Status Code          | Meaning               | Handling Strategy                                  |
+| :------------------- | :-------------------- | :------------------------------------------------- |
+| **200 OK**           | Success               | Show "data".                                       |
+| **201 Created**      | Resource Created      | Show success message, redirect if needed.          |
+| **400 Bad Request**  | Validation Error      | Show `message` (e.g., "Invalid email format").     |
+| **401 Unauthorized** | Token missing/invalid | **Redirect to Login**. Token expired or cleared.   |
+| **403 Forbidden**    | Role mismatch         | Show "Access Denied". User lacks permission.       |
+| **404 Not Found**    | ID/Path not found     | Show 404 page or "Data not found".                 |
+| **500 Server Error** | Backend Issue         | Show generic error toast ("Something went wrong"). |
 
 ---
 
@@ -77,6 +82,7 @@ Use the `meta` object to build your pagination UI:
 Here is a recommended setup for your API client to handle these responses automatically.
 
 ### A. Interfaces
+
 ```typescript
 interface ApiResponse<T> {
   success: boolean;
@@ -97,26 +103,33 @@ interface ApiError {
 ```
 
 ### B. Fetch Wrapper Example
+
 ```typescript
-async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-    // Credentials 'include' is CRITICAL for Cookie Auth
-    credentials: 'include', 
-  });
+async function fetchApi<T>(
+  endpoint: string,
+  options: RequestInit = {}
+): Promise<ApiResponse<T>> {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}${endpoint}`,
+    {
+      ...options,
+      headers: {
+        "Content-Type": "application/json",
+        ...options.headers,
+      },
+      // Credentials 'include' is CRITICAL for Cookie Auth
+      credentials: "include",
+    }
+  );
 
   const body = await response.json();
 
   if (!response.ok || !body.success) {
     // 401 handling usually happens here
     if (response.status === 401) {
-      window.location.href = '/login';
+      window.location.href = "/login";
     }
-    throw new Error(body.message || 'An error occurred');
+    throw new Error(body.message || "An error occurred");
   }
 
   return body;
@@ -136,13 +149,8 @@ const getUsers = async (page = 1) => {
 
 ---
 
-## 5. Filtering (Query Params)
+## 6. Documentation Links
 
-Filtering is usually done via URL Query Parameters.
-*   **Search**: `?search=query` (if supported)
-*   **Filters**: `?role=ADMIN&isVerified=true`
-
-**Example:**
-`/api/v1/users?page=1&limit=10&role=RELAWAN&isVerified=false`
-
-*Ensure to URL-encode your query parameters.*
+- [Authentication Guide](./AUTH_GUIDE.md)
+- [User Management Guide](./USER_MANAGEMENT.md)
+- [Measurement & Sync Guide](./MEASUREMENT_GUIDE.md)

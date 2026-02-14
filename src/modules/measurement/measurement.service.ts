@@ -1,6 +1,6 @@
 import prisma from "@/config/db";
 import { Posisi, Status, Prisma } from "@prisma/client";
-import { NotFoundError } from "@/utils/ApiError";
+import { NotFoundError, ForbiddenError } from "@/utils/ApiError";
 import { calculateAnthropometry } from "@/utils/zscore/calculator";
 
 interface CreateMeasurementInput {
@@ -18,6 +18,11 @@ interface CreateMeasurementInput {
   sanitationData?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   medicalHistoryData?: any;
+  // Optional pre-calculated statuses from frontend (Offline First)
+  bb_u_status?: string;
+  tb_u_status?: string;
+  bb_tb_status?: string;
+  statusAkhir?: Status;
 }
 
 export interface SyncMeasurementInput extends CreateMeasurementInput {
@@ -129,6 +134,7 @@ export class MeasurementService {
     }
 
     // Calculate Z-Score and status using WHO LMS Standard
+    // NOTE: Backend recalculates to ensure data integrity, even if frontend sends calculated values.
     const umurBulan = this.calculateAgeInMonths(balita.tanggalLahir);
     const zScoreResult = calculateAnthropometry(
       umurBulan,
@@ -140,6 +146,7 @@ export class MeasurementService {
     return prisma.measurement.create({
       data: {
         ...data,
+        // Overwrite any frontend-provided status with backend calculation
         bb_u_status: zScoreResult.bb_u_status,
         tb_u_status: zScoreResult.tb_u_status,
         bb_tb_status: zScoreResult.bb_tb_status,
@@ -189,6 +196,7 @@ export class MeasurementService {
       if (!balita) continue;
 
       const umurBulan = this.calculateAgeInMonths(balita.tanggalLahir);
+      // Recalculate z-scores for synced data to ensure integrity
       const zScore = calculateAnthropometry(
         umurBulan,
         m.beratBadan,
@@ -326,6 +334,114 @@ export class MeasurementService {
 
     await prisma.measurement.delete({ where: { id } });
     return { message: "Data pengukuran berhasil dihapus" };
+  }
+
+  async getPublicInfo(id: string) {
+    // 1. Try to find by Measurement ID
+    let measurement = await prisma.measurement.findUnique({
+      where: { id },
+      include: {
+        balita: {
+          include: {
+            posko: { select: { name: true } },
+          },
+        },
+      },
+    });
+
+    // 2. If not found, check if it's a Balita ID and get the latest measurement
+    if (!measurement) {
+      const balitaExists = await prisma.balita.findUnique({ where: { id } });
+      if (balitaExists) {
+        measurement = await prisma.measurement.findFirst({
+          where: { balitaId: id },
+          orderBy: { createdAt: "desc" },
+          include: {
+            balita: {
+              include: {
+                posko: { select: { name: true } },
+              },
+            },
+          },
+        });
+      }
+    }
+
+    if (!measurement) {
+      throw new NotFoundError("Data pengukuran tidak ditemukan");
+    }
+
+    // Masking Name: "Budi" -> "B***"
+    const maskedName = measurement.balita.namaAnak
+      .split(" ")
+      .map((word) => word[0] + "***")
+      .join(" ");
+
+    return {
+      id: measurement.id, // Return actual Measurement ID for context if needed
+      maskedName: maskedName,
+      gender: measurement.balita.jenisKelamin,
+      createdAt: measurement.createdAt,
+      poskoName: measurement.balita.posko?.name || "Tidak ada posko",
+    };
+  }
+
+  async verifyAccess(id: string, dob: string) {
+    // 1. Identify Balita ID from the input ID (could be measurement ID or balita ID)
+    let balitaId = id;
+
+    // Check if it's a measurement ID first
+    const measurementRef = await prisma.measurement.findUnique({
+      where: { id },
+      select: { balitaId: true },
+    });
+
+    if (measurementRef) {
+      balitaId = measurementRef.balitaId;
+    }
+
+    // 2. Fetch Balita with details for verification and response
+    const balita = await prisma.balita.findUnique({
+      where: { id: balitaId },
+      include: {
+        village: true,
+        posko: true,
+      },
+    });
+
+    if (!balita) {
+      throw new NotFoundError("Data tidak ditemukan");
+    }
+
+    // 3. Verify DOB (Compare YYYY-MM-DD)
+    const inputDate = new Date(dob).toISOString().split("T")[0];
+    const actualDate = balita.tanggalLahir.toISOString().split("T")[0];
+
+    if (inputDate !== actualDate) {
+      throw new ForbiddenError("Anda tidak memiliki akses terhadap data ini");
+    }
+
+    // 4. Fetch ALL Measurements for this Balita (History)
+    const measurements = await prisma.measurement.findMany({
+      where: { balitaId: balita.id },
+      orderBy: { createdAt: "desc" },
+      include: {
+        relawan: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        balita,
+        measurements,
+      },
+    };
   }
 
   private calculateAgeInMonths(birthDate: Date): number {

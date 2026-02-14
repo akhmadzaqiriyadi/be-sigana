@@ -1,12 +1,6 @@
 import { Router } from "express";
 import { validate } from "@/middlewares/validate";
 import {
-  createMeasurementSchema,
-  getMeasurementSchema,
-  syncMeasurementSchema,
-  syncPullSchema,
-} from "@/validations/measurement.validation";
-import {
   getAllMeasurements,
   getMeasurementById,
   createMeasurement,
@@ -14,11 +8,88 @@ import {
   syncPull,
   getStatistics,
   deleteMeasurement,
+  getPublicMeasurement,
+  accessMeasurement,
 } from "./measurement.controller";
 import { authenticate, authorize } from "@/middlewares/auth";
+import {
+  createMeasurementSchema,
+  getMeasurementSchema,
+  syncMeasurementSchema,
+  syncPullSchema,
+  accessMeasurementSchema,
+} from "@/validations/measurement.validation";
 
 /**
  * @openapi
+ * /measurements/{id}/public:
+ *   get:
+ *     tags:
+ *       - Measurement (Public)
+ *     summary: Get public masked info for shared link
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Public info retrieved
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id: { type: string }
+ *                     maskedName: { type: string, example: "B*** S***" }
+ *                     gender: { type: string, example: "L" }
+ *                     createdAt: { type: string, format: date-time }
+ *                     poskoName: { type: string }
+ *       404:
+ *         description: Not found
+ *
+ * /measurements/{id}/access:
+ *   post:
+ *     tags:
+ *       - Measurement (Public)
+ *     summary: Unlock full measurement data with DOB
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [dob]
+ *             properties:
+ *               dob: { type: string, format: date, example: "2023-05-20" }
+ *     responses:
+ *       200:
+ *         description: Access granted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     balita: { $ref: '#/components/schemas/Balita' }
+ *                     measurements:
+ *                       type: array
+ *                       items: { $ref: '#/components/schemas/Measurement' }
+ *       403:
+ *         description: Forbidden (DOB mismatch)
+ *
  * /measurements:
  *   get:
  *     tags:
@@ -122,6 +193,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *               lingkarKepala: { type: number, example: 45.0 }
  *               lila: { type: number, example: 14.5 }
  *               posisiUkur: { type: string, enum: [TERLENTANG, BERDIRI] }
+ *               bb_u_status: { type: string, example: "Gizi Baik" }
+ *               tb_u_status: { type: string, example: "Normal" }
+ *               bb_tb_status: { type: string, example: "Gizi Baik" }
+ *               statusAkhir: { type: string, enum: [HIJAU, KUNING, MERAH] }
  *     responses:
  *       201:
  *         description: Measurement created
@@ -262,6 +337,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                     lila: { type: number, example: 14.5 }
  *                     posisiUkur: { type: string, enum: [TERLENTANG, BERDIRI] }
  *                     recordedAt: { type: string, format: date-time }
+ *                     bb_u_status: { type: string }
+ *                     tb_u_status: { type: string }
+ *                     bb_tb_status: { type: string }
+ *                     statusAkhir: { type: string, enum: [HIJAU, KUNING, MERAH] }
  *     responses:
  *       200:
  *         description: Sync successful
@@ -313,6 +392,14 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *               message: 'Terjadi kesalahan pada server'
  */
 const router = Router();
+
+// Public Routes (Share Feature)
+router.get("/:id/public", getPublicMeasurement);
+router.post(
+  "/:id/access",
+  validate(accessMeasurementSchema),
+  accessMeasurement
+);
 
 router.use(authenticate);
 

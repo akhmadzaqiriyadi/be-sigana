@@ -8,6 +8,11 @@ export const createMeasurementSchema = z.object({
     lingkarKepala: z.number().positive().optional(),
     lila: z.number().positive().optional(),
     posisiUkur: z.enum(["TERLENTANG", "BERDIRI"]),
+    // Optional status fields (Offline First support) - Validation only
+    bb_u_status: z.string().optional(),
+    tb_u_status: z.string().optional(),
+    bb_tb_status: z.string().optional(),
+    statusAkhir: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
   }),
 });
 
@@ -23,6 +28,11 @@ export const syncMeasurementSchema = z.object({
         lila: z.number().optional(),
         posisiUkur: z.enum(["TERLENTANG", "BERDIRI"]),
         recordedAt: z.string().optional(),
+        // Optional status fields (Offline First support)
+        bb_u_status: z.string().optional(),
+        tb_u_status: z.string().optional(),
+        bb_tb_status: z.string().optional(),
+        statusAkhir: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
       })
     ),
   }),
@@ -46,5 +56,13 @@ export const getMeasurementSchema = z.object({
 export const syncPullSchema = z.object({
   query: z.object({
     lastSync: z.string().datetime("Format tanggal harus ISO 8601"),
+  }),
+});
+
+export const accessMeasurementSchema = z.object({
+  body: z.object({
+    dob: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal lahir harus YYYY-MM-DD"),
   }),
 });

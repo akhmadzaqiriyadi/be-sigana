@@ -77,7 +77,7 @@ export class AuthService {
     }
 
     if (!user.isVerified) {
-      throw new BadRequestError(
+      throw new ForbiddenError(
         "Akun belum diverifikasi. Harap tunggu persetujuan admin."
       );
     }
@@ -98,6 +98,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
+        isVerified: user.isVerified, // Include verification status
       },
       ...tokens,
     };

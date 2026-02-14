@@ -9,6 +9,7 @@ This backend implements a **Dual Authentication Strategy** using JWT (JSON Web T
 **Description:** Register a new user account. New users are created with `isVerified: false` by default and must wait for admin approval before they can login.
 
 **Request Body:**
+
 ```json
 {
   "email": "newuser@example.com",
@@ -18,11 +19,13 @@ This backend implements a **Dual Authentication Strategy** using JWT (JSON Web T
 ```
 
 **Validation Rules:**
+
 - `email`: Must be a valid email format
 - `password`: Minimum 6 characters
 - `name`: Minimum 3 characters
 
 **Response (201 Created):**
+
 ```json
 {
   "success": true,
@@ -39,10 +42,12 @@ This backend implements a **Dual Authentication Strategy** using JWT (JSON Web T
 ```
 
 **Error Responses:**
+
 - `409 Conflict`: Email already registered
 - `400 Bad Request`: Validation error (missing/invalid fields)
 
 **Important Notes:**
+
 1. New users cannot login until an Admin verifies their account.
 2. Admin can verify users via: `PATCH /api/v1/users/:id/verify`
 3. Alternatively, Admin can create pre-verified users via: `POST /api/v1/users`
@@ -54,6 +59,7 @@ This backend implements a **Dual Authentication Strategy** using JWT (JSON Web T
 **Endpoint:** `POST /api/v1/auth/login`
 
 **Request Body:**
+
 ```json
 {
   "email": "user@example.com",
@@ -63,23 +69,31 @@ This backend implements a **Dual Authentication Strategy** using JWT (JSON Web T
 
 **Response:**
 On success, the backend does two things:
+
 1.  **Sets an `httpOnly` Cookie** named `token` containing the JWT.
-    *   This cookie is automatically handled by the browser for subsequent requests if `credentials: 'include'` is set.
+    - This cookie is automatically handled by the browser for subsequent requests if `credentials: 'include'` is set.
 2.  **Returns the JWT in the Response Body**:
     ```json
     {
       "success": true,
       "message": "Login successful",
       "data": {
-        "user": { ... },
-        "token": "eyJhbGci..." // <--- Use this for Header-based auth
+        "user": {
+          "id": "...",
+          "email": "...",
+          "role": "RELAWAN",
+          "isVerified": true
+        },
+        "accessToken": "eyJhbGci...",
+        "refreshToken": "..."
       }
     }
     ```
 
 **Error Responses:**
+
 - `401 Unauthorized`: Invalid email or password
-- `400 Bad Request`: Account not verified (pending admin approval)
+- `403 Forbidden`: Account not verified (pending admin approval)
 
 ---
 
@@ -88,41 +102,46 @@ On success, the backend does two things:
 You can choose **ONE** of the following methods to authenticate your requests. You do NOT need both, but if both are provided, the Header takes precedence.
 
 ### Option A: Cookie-Based (Recommended for Web Apps)
+
 This method is more secure against XSS because the token is in an `httpOnly` cookie and cannot be read by JavaScript.
 
-*   **Requirement:** You must set `credentials: 'include'` (for fetch) or `withCredentials: true` (for axios) on **EVERY** request.
-*   **How it works:** The browser automatically sends the `token` cookie to the backend.
+- **Requirement:** You must set `credentials: 'include'` (for fetch) or `withCredentials: true` (for axios) on **EVERY** request.
+- **How it works:** The browser automatically sends the `token` cookie to the backend.
 
 **Example (Fetch):**
+
 ```javascript
-fetch('http://localhost:8080/api/v1/auth/me', {
-  method: 'GET',
-  credentials: 'include' // <--- CRITICAL
+fetch("http://localhost:8080/api/v1/auth/me", {
+  method: "GET",
+  credentials: "include", // <--- CRITICAL
 });
 ```
 
 **Example (Axios):**
+
 ```javascript
-axios.get('http://localhost:8080/api/v1/auth/me', {
-  withCredentials: true // <--- CRITICAL
+axios.get("http://localhost:8080/api/v1/auth/me", {
+  withCredentials: true, // <--- CRITICAL
 });
 ```
 
 ### Option B: Header-Based (Alternative)
+
 Use this if you prefer managing the token manually in `localStorage` or if Cookies are blocked (e.g., mobile apps, some cross-origin scenarios).
 
-*   **Requirement:** You must attach the `Authorization` header.
-*   **Format:** `Bearer <token>`
+- **Requirement:** You must attach the `Authorization` header.
+- **Format:** `Bearer <token>`
 
 **Example:**
-```javascript
-const token = localStorage.getItem('token'); // Assuming you saved it after login
 
-fetch('http://localhost:8080/api/v1/auth/me', {
-  method: 'GET',
+```javascript
+const token = localStorage.getItem("token"); // Assuming you saved it after login
+
+fetch("http://localhost:8080/api/v1/auth/me", {
+  method: "GET",
   headers: {
-    'Authorization': `Bearer ${token}`
-  }
+    Authorization: `Bearer ${token}`,
+  },
 });
 ```
 
@@ -133,8 +152,9 @@ fetch('http://localhost:8080/api/v1/auth/me', {
 **Endpoint:** `POST /api/v1/auth/logout`
 
 **Action:**
-*   You should call this endpoint to clear the backend cookie.
-*   **Frontend Responsibility:** You must also remove the token from `localStorage`/state if you are using Option B.
+
+- You should call this endpoint to clear the backend cookie.
+- **Frontend Responsibility:** You must also remove the token from `localStorage`/state if you are using Option B.
 
 ---
 
@@ -143,6 +163,7 @@ fetch('http://localhost:8080/api/v1/auth/me', {
 If you are getting `401 Unauthorized` errors despite logging in:
 
 ### Common Issue: Localhost Cross-Origin Cookies
+
 Since the frontend (`localhost:3000`) and backend (`localhost:8080`) are on different ports, modern browsers (Chrome/Edge) treat them as **Cross-Site**.
 
 If you use **Option A (Cookies)**, the browser might block the cookie because of `SameSite` policies.
@@ -151,8 +172,8 @@ If you use **Option A (Cookies)**, the browser might block the cookie because of
 
 1.  **Use a Proxy (Best Practice):**
     Configure your frontend (Next.js/Vite) to proxy `/api` requests to `localhost:8080`. This makes everything look like `localhost:3000` to the browser, solving all cookie issues.
-    *   **Next.js:** Use `rewrites()` in `next.config.js`.
-    *   **Vite:** Use `server.proxy` in `vite.config.ts`.
+    - **Next.js:** Use `rewrites()` in `next.config.js`.
+    - **Vite:** Use `server.proxy` in `vite.config.ts`.
 
 2.  **Ensure Credentials are sent:**
     Double-check `credentials: 'include'` is present on the failing request.
@@ -161,6 +182,7 @@ If you use **Option A (Cookies)**, the browser might block the cookie because of
     If cookies are proving difficult in development, switch to **Option B** (Header-based) temporarily. Ensure you grab the `token` from the login response and send it in the header.
 
 ### Note on "Bearer undefined"
+
 If you attempt to send an Authorization header, please ensure the token is valid. Sending `Authorization: Bearer undefined` will cause authentication to fail. The backend handles this gracefully now, but it indicates a bug in the frontend token retrieval logic.
 
 ---
@@ -172,6 +194,7 @@ If you attempt to send an Authorization header, please ensure the token is valid
 **Description:** Allows the logged-in user to update their own profile information (currently just `name`).
 
 **Request Body:**
+
 ```json
 {
   "name": "Updated Name"
@@ -179,6 +202,7 @@ If you attempt to send an Authorization header, please ensure the token is valid
 ```
 
 **Response:**
+
 ```json
 {
   "success": true,
@@ -190,4 +214,3 @@ If you attempt to send an Authorization header, please ensure the token is valid
   }
 }
 ```
-
