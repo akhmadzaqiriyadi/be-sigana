@@ -9,7 +9,7 @@ describe("ZScoreCalculator", () => {
     // Age 6 months (exact match in our constants)
     // Boy: L=0.0435, M=7.9392, S=0.11438
     // Weight: 7.9392 (Median) -> Z should be 0
-    const result = calculator.calculate(6, 7.9392, 60, "L");
+    const result = calculator.calculate(6, 7.9392, 60, 0, 0, "L");
     expect(Math.abs(result.zScores.bb_u)).toBeLessThan(0.01);
     expect(result.bb_u_status).toBe("Berat Badan Normal");
   });
@@ -23,7 +23,7 @@ describe("ZScoreCalculator", () => {
     // Expected M = 4.4709 + (7.9392 - 4.4709)*0.4 = 4.4709 + 1.38732 = 5.858
 
     // If weight = 5.858, Z should be approx 0
-    const result = calculator.calculate(3, 5.858, 60, "L");
+    const result = calculator.calculate(3, 5.858, 60, 0, 0, "L");
     expect(Math.abs(result.zScores.bb_u)).toBeLessThan(0.05);
   });
 
@@ -36,7 +36,7 @@ describe("ZScoreCalculator", () => {
     // Num = 0.00427
     // Denom = 0.003622
     // Z = 1.18
-    const result = calculator.calculate(12, 11, 75, "L");
+    const result = calculator.calculate(12, 11, 75, 0, 0, "L");
     expect(result.zScores.bb_u).toBeGreaterThan(1);
     expect(result.zScores.bb_u).toBeLessThan(1.3);
   });
@@ -46,7 +46,7 @@ describe("ZScoreCalculator", () => {
     // TB/U M=75.75, S=0.034
     // Case: Height = 68cm
     // Z approx -3
-    const result = calculator.calculate(12, 9.6, 68, "L");
+    const result = calculator.calculate(12, 9.6, 68, 0, 0, "L");
     expect(result.tb_u_status).toBe("Sangat Pendek");
     expect(result.statusAkhir).toBe("MERAH");
   });
