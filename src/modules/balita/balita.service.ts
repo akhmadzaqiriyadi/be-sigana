@@ -35,6 +35,16 @@ export class BalitaService {
       where.OR = [
         { namaAnak: { contains: filters.search, mode: "insensitive" } },
         { namaOrtu: { contains: filters.search, mode: "insensitive" } },
+        {
+          village: {
+            name: { contains: filters.search, mode: "insensitive" },
+          },
+        },
+        {
+          posko: {
+            name: { contains: filters.search, mode: "insensitive" },
+          },
+        },
       ];
     }
 

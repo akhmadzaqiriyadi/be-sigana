@@ -40,6 +40,8 @@ export const syncMeasurementSchema = z.object({
 
 export const getMeasurementSchema = z.object({
   query: z.object({
+    q: z.string().optional(),
+    search: z.string().optional(),
     balitaId: z.string().uuid().optional(),
     status: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
     updatedAfter: z
@@ -64,5 +66,16 @@ export const accessMeasurementSchema = z.object({
     dob: z
       .string()
       .regex(/^\d{4}-\d{2}-\d{2}$/, "Format tanggal lahir harus YYYY-MM-DD"),
+  }),
+});
+
+export const updateMeasurementSchema = z.object({
+  body: z.object({
+    beratBadan: z.number().positive("Berat badan harus positif").optional(),
+    tinggiBadan: z.number().positive("Tinggi badan harus positif").optional(),
+    lingkarKepala: z.number().positive().optional(),
+    lila: z.number().positive().optional(),
+    posisiUkur: z.enum(["TERLENTANG", "BERDIRI"]).optional(),
+    notes: z.string().optional(),
   }),
 });

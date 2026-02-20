@@ -16,7 +16,9 @@ export const getAllBalitas = asyncHandler(
       ? parseInt(String(req.query.poskoId))
       : undefined;
 
-    const search = req.query.search ? String(req.query.search) : undefined;
+    const search = req.query.search
+      ? String(req.query.search)
+      : (req.query.q as string);
 
     const result = await balitaService.findAll(page, limit, {
       villageId,

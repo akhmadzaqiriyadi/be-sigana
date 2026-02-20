@@ -33,11 +33,13 @@ export const getAllMeasurements = asyncHandler(
       typeof req.query.createdAfter === "string"
         ? new Date(req.query.createdAfter)
         : undefined;
+    const search = typeof req.query.q === "string" ? req.query.q : undefined;
 
     const result = await measurementService.findAll(
       page,
       limit,
       {
+        search,
         balitaId,
         relawanId,
         status,
@@ -208,6 +210,16 @@ export const deleteMeasurement = asyncHandler(
   async (req: Request, res: Response) => {
     await measurementService.delete(String(req.params.id));
     sendSuccess(res, "Data pengukuran berhasil dihapus");
+  }
+);
+
+export const updateMeasurement = asyncHandler(
+  async (req: Request, res: Response) => {
+    const measurement = await measurementService.update(
+      String(req.params.id),
+      req.body
+    );
+    sendSuccess(res, "Data pengukuran berhasil diperbarui", measurement);
   }
 );
 

@@ -10,6 +10,7 @@ import {
   deleteMeasurement,
   getPublicMeasurement,
   accessMeasurement,
+  updateMeasurement,
 } from "./measurement.controller";
 import { authenticate, authorize } from "@/middlewares/auth";
 import {
@@ -18,6 +19,7 @@ import {
   syncMeasurementSchema,
   syncPullSchema,
   accessMeasurementSchema,
+  updateMeasurementSchema,
 } from "@/validations/measurement.validation";
 
 /**
@@ -107,6 +109,10 @@ import {
  *         name: limit
  *         schema: { type: integer, default: 10 }
  *         description: Items per page
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Search by child name
  *       - in: query
  *         name: balitaId
  *         schema: { type: string, format: uuid }
@@ -390,6 +396,119 @@ import {
  *             example:
  *               success: false
  *               message: 'Terjadi kesalahan pada server'
+ *
+ * /measurements/stats:
+ *   get:
+ *     tags:
+ *       - Measurement
+ *     summary: Get measurement statistics
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Statistics data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     total: { type: integer }
+ *                     totalChildrenChecked: { type: integer }
+ *                     totalSynced: { type: integer }
+ *                     statusCounts:
+ *                       type: object
+ *                       properties:
+ *                         HIJAU: { type: integer }
+ *                         KUNING: { type: integer }
+ *                         MERAH: { type: integer }
+ *                     recentMeasurements:
+ *                       type: array
+ *                       items: { $ref: '#/components/schemas/Measurement' }
+ *
+ * /measurements/{id}:
+ *   get:
+ *     tags:
+ *       - Measurement
+ *     summary: Get measurement by ID
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Measurement detail
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data: { $ref: '#/components/schemas/Measurement' }
+ *       404:
+ *         description: Not found
+ *
+ *   patch:
+ *     tags:
+ *       - Measurement
+ *     summary: Update measurement (recalls Z-Score)
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               beratBadan: { type: number }
+ *               tinggiBadan: { type: number }
+ *               lingkarKepala: { type: number }
+ *               lila: { type: number }
+ *               posisiUkur: { type: string, enum: [TERLENTANG, BERDIRI] }
+ *               notes: { type: string }
+ *     responses:
+ *       200:
+ *         description: Measurement updated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 data: { $ref: '#/components/schemas/Measurement' }
+ *
+ *   delete:
+ *     tags:
+ *       - Measurement
+ *     summary: Soft delete measurement
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: string, format: uuid }
+ *     responses:
+ *       200:
+ *         description: Measurement deleted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success: { type: boolean, example: true }
+ *                 message: { type: string }
  */
 const router = Router();
 
@@ -425,6 +544,13 @@ router.post(
   authorize("RELAWAN", "ADMIN"),
   validate(syncMeasurementSchema),
   syncMeasurements
+);
+
+router.patch(
+  "/:id",
+  authorize("RELAWAN", "ADMIN"),
+  validate(updateMeasurementSchema),
+  updateMeasurement
 );
 
 // Admin only for delete

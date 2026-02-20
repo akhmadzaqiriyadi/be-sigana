@@ -34,6 +34,7 @@ export class MeasurementService {
     page = 1,
     limit = 10,
     filters?: {
+      search?: string;
       balitaId?: string;
       relawanId?: string;
       status?: Status;
@@ -43,7 +44,9 @@ export class MeasurementService {
     currentUser?: { role: string; userId: string }
   ) {
     const skip = (page - 1) * limit;
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = {
+      deletedAt: null,
+    };
 
     // RBAC: If RELAWAN, force filter by their ID
     if (currentUser?.role === "RELAWAN") {
@@ -53,6 +56,21 @@ export class MeasurementService {
       where.relawanId = filters.relawanId;
     }
 
+    if (filters?.search) {
+      where.balita = {
+        OR: [
+          { namaAnak: { contains: filters.search, mode: "insensitive" } },
+          {
+            village: {
+              name: { contains: filters.search, mode: "insensitive" },
+            },
+          },
+          {
+            posko: { name: { contains: filters.search, mode: "insensitive" } },
+          },
+        ],
+      };
+    }
     if (filters?.balitaId) where.balitaId = filters.balitaId;
     if (filters?.status) where.statusAkhir = filters.status;
     if (filters?.updatedAfter) where.updatedAt = { gt: filters.updatedAfter };
@@ -164,6 +182,58 @@ export class MeasurementService {
           select: {
             id: true,
             name: true,
+          },
+        },
+      },
+    });
+  }
+
+  async update(id: string, data: Partial<CreateMeasurementInput>) {
+    const measurement = await prisma.measurement.findUnique({
+      where: { id },
+      include: { balita: true },
+    });
+
+    if (!measurement) {
+      throw new NotFoundError("Data pengukuran tidak ditemukan");
+    }
+
+    // If anthropometry data changes, recalculate Z-Scores
+    let zScoreUpdates = {};
+    if (
+      (data.beratBadan && data.beratBadan !== measurement.beratBadan) ||
+      (data.tinggiBadan && data.tinggiBadan !== measurement.tinggiBadan)
+    ) {
+      const umurBulan = this.calculateAgeInMonths(
+        measurement.balita.tanggalLahir
+      );
+      const zScoreResult = calculateAnthropometry(
+        umurBulan,
+        data.beratBadan || measurement.beratBadan,
+        data.tinggiBadan || measurement.tinggiBadan,
+        measurement.balita.jenisKelamin
+      );
+
+      zScoreUpdates = {
+        bb_u_status: zScoreResult.bb_u_status,
+        tb_u_status: zScoreResult.tb_u_status,
+        bb_tb_status: zScoreResult.bb_tb_status,
+        statusAkhir: zScoreResult.statusAkhir as Status,
+      };
+    }
+
+    return prisma.measurement.update({
+      where: { id },
+      data: {
+        ...data,
+        ...zScoreUpdates,
+      },
+      include: {
+        balita: {
+          select: {
+            id: true,
+            namaAnak: true,
+            namaOrtu: true,
           },
         },
       },
@@ -332,14 +402,18 @@ export class MeasurementService {
       throw new NotFoundError("Data pengukuran tidak ditemukan");
     }
 
-    await prisma.measurement.delete({ where: { id } });
+    // Soft delete for sync tombstone
+    await prisma.measurement.update({
+      where: { id },
+      data: { deletedAt: new Date() },
+    });
     return { message: "Data pengukuran berhasil dihapus" };
   }
 
   async getPublicInfo(id: string) {
     // 1. Try to find by Measurement ID
-    let measurement = await prisma.measurement.findUnique({
-      where: { id },
+    let measurement = await prisma.measurement.findFirst({
+      where: { id, deletedAt: null },
       include: {
         balita: {
           include: {
@@ -391,8 +465,8 @@ export class MeasurementService {
     let balitaId = id;
 
     // Check if it's a measurement ID first
-    const measurementRef = await prisma.measurement.findUnique({
-      where: { id },
+    const measurementRef = await prisma.measurement.findFirst({
+      where: { id, deletedAt: null },
       select: { balitaId: true },
     });
 
@@ -423,7 +497,7 @@ export class MeasurementService {
 
     // 4. Fetch ALL Measurements for this Balita (History)
     const measurements = await prisma.measurement.findMany({
-      where: { balitaId: balita.id },
+      where: { balitaId: balita.id, deletedAt: null },
       orderBy: { createdAt: "desc" },
       include: {
         relawan: {

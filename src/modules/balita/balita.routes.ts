@@ -31,7 +31,11 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *       - in: query
  *         name: search
  *         schema: { type: string }
- *         description: Search by namaAnak or namaOrtu (case-insensitive)
+ *         description: Search by namaAnak, namaOrtu, Village, or Posko
+ *       - in: query
+ *         name: q
+ *         schema: { type: string }
+ *         description: Alias for search
  *       - in: query
  *         name: villageId
  *         schema: { type: integer }
