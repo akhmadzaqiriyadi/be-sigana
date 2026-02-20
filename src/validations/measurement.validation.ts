@@ -43,7 +43,12 @@ export const getMeasurementSchema = z.object({
     q: z.string().optional(),
     search: z.string().optional(),
     balitaId: z.string().uuid().optional(),
-    status: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
+    status: z
+      .preprocess(
+        (val) => (val === "" ? undefined : val),
+        z.enum(["HIJAU", "KUNING", "MERAH"])
+      )
+      .optional(),
     updatedAfter: z
       .string()
       .datetime({ message: "Format tanggal harus ISO 8601" })
