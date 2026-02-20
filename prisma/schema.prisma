@@ -107,6 +107,9 @@ model Measurement {
   bb_u_status   String
   tb_u_status   String
   bb_tb_status  String
+  lk_u_status   String? // Lingkar Kepala / Umur
+  lila_u_status String? // Lingkar Lengan Atas / Umur
+  imt_u_status  String? // Indeks Massa Tubuh / Umur
   statusAkhir   Status // HIJAU (Aman), KUNING (Waspada), MERAH (Bahaya)
 
   // Mekanisme Sync PWA

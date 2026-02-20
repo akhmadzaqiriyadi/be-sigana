@@ -22,7 +22,7 @@ export interface HeightLMSRecord {
 
 export interface GrowthStandard {
   sex: "L" | "P";
-  measure: "bb_u" | "tb_u";
+  measure: "bb_u" | "tb_u" | "lk_u" | "lila_u" | "imt_u";
   data: LMSRecord[];
 }
 
@@ -148,6 +148,69 @@ export const BB_TB_GIRL_DATA: HeightLMSRecord[] = [
   { height: 120, L: 0.039, M: 21.8, S: 0.08 },
 ];
 
+// --- LK/U (Head Circumference-for-age) Mock Data ---
+export const LK_U_BOY_DATA: LMSRecord[] = [
+  { month: 0, L: 1, M: 34.5, S: 0.04 },
+  { month: 6, L: 1, M: 43.3, S: 0.04 },
+  { month: 12, L: 1, M: 46.1, S: 0.04 },
+  { month: 24, L: 1, M: 48.3, S: 0.04 },
+  { month: 36, L: 1, M: 49.5, S: 0.04 },
+  { month: 48, L: 1, M: 50.3, S: 0.04 },
+  { month: 60, L: 1, M: 50.9, S: 0.04 },
+];
+
+export const LK_U_GIRL_DATA: LMSRecord[] = [
+  { month: 0, L: 1, M: 33.9, S: 0.04 },
+  { month: 6, L: 1, M: 42.2, S: 0.04 },
+  { month: 12, L: 1, M: 44.9, S: 0.04 },
+  { month: 24, L: 1, M: 47.2, S: 0.04 },
+  { month: 36, L: 1, M: 48.5, S: 0.04 },
+  { month: 48, L: 1, M: 49.3, S: 0.04 },
+  { month: 60, L: 1, M: 50.0, S: 0.04 },
+];
+
+// --- LiLA/U (Arm Circumference-for-age) Mock Data ---
+export const LILA_U_BOY_DATA: LMSRecord[] = [
+  { month: 0, L: 1, M: 10.5, S: 0.05 },
+  { month: 6, L: 1, M: 14.5, S: 0.05 },
+  { month: 12, L: 1, M: 15.5, S: 0.05 },
+  { month: 24, L: 1, M: 16.0, S: 0.05 },
+  { month: 36, L: 1, M: 16.5, S: 0.05 },
+  { month: 48, L: 1, M: 16.9, S: 0.05 },
+  { month: 60, L: 1, M: 17.2, S: 0.05 },
+];
+
+export const LILA_U_GIRL_DATA: LMSRecord[] = [
+  { month: 0, L: 1, M: 10.0, S: 0.05 },
+  { month: 6, L: 1, M: 14.0, S: 0.05 },
+  { month: 12, L: 1, M: 15.0, S: 0.05 },
+  { month: 24, L: 1, M: 15.8, S: 0.05 },
+  { month: 36, L: 1, M: 16.2, S: 0.05 },
+  { month: 48, L: 1, M: 16.6, S: 0.05 },
+  { month: 60, L: 1, M: 17.0, S: 0.05 },
+];
+
+// --- IMT/U (BMI-for-age) Mock Data ---
+export const IMT_U_BOY_DATA: LMSRecord[] = [
+  { month: 0, L: 1, M: 13.4, S: 0.08 },
+  { month: 6, L: 1, M: 17.2, S: 0.08 },
+  { month: 12, L: 1, M: 16.9, S: 0.08 },
+  { month: 24, L: 1, M: 16.0, S: 0.08 },
+  { month: 36, L: 1, M: 15.6, S: 0.08 },
+  { month: 48, L: 1, M: 15.3, S: 0.08 },
+  { month: 60, L: 1, M: 15.2, S: 0.08 },
+];
+
+export const IMT_U_GIRL_DATA: LMSRecord[] = [
+  { month: 0, L: 1, M: 13.3, S: 0.08 },
+  { month: 6, L: 1, M: 16.8, S: 0.08 },
+  { month: 12, L: 1, M: 16.4, S: 0.08 },
+  { month: 24, L: 1, M: 15.7, S: 0.08 },
+  { month: 36, L: 1, M: 15.4, S: 0.08 },
+  { month: 48, L: 1, M: 15.1, S: 0.08 },
+  { month: 60, L: 1, M: 15.0, S: 0.08 },
+];
+
 export const WHO_STANDARDS: (GrowthStandard | GrowthStandardHeight)[] = [
   { sex: "L", measure: "bb_u", data: BB_U_BOYS_DATA },
   { sex: "P", measure: "bb_u", data: BB_U_GIRLS_DATA },
@@ -155,4 +218,11 @@ export const WHO_STANDARDS: (GrowthStandard | GrowthStandardHeight)[] = [
   { sex: "P", measure: "tb_u", data: TB_U_GIRL_DATA },
   { sex: "L", measure: "bb_tb", data: BB_TB_BOY_DATA },
   { sex: "P", measure: "bb_tb", data: BB_TB_GIRL_DATA },
+  // New Standards
+  { sex: "L", measure: "lk_u", data: LK_U_BOY_DATA },
+  { sex: "P", measure: "lk_u", data: LK_U_GIRL_DATA },
+  { sex: "L", measure: "lila_u", data: LILA_U_BOY_DATA },
+  { sex: "P", measure: "lila_u", data: LILA_U_GIRL_DATA },
+  { sex: "L", measure: "imt_u", data: IMT_U_BOY_DATA },
+  { sex: "P", measure: "imt_u", data: IMT_U_GIRL_DATA },
 ];

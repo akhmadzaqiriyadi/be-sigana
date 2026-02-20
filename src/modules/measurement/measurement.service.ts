@@ -158,6 +158,8 @@ export class MeasurementService {
       umurBulan,
       data.beratBadan,
       data.tinggiBadan,
+      data.lingkarKepala,
+      data.lila,
       balita.jenisKelamin
     );
 
@@ -168,6 +170,9 @@ export class MeasurementService {
         bb_u_status: zScoreResult.bb_u_status,
         tb_u_status: zScoreResult.tb_u_status,
         bb_tb_status: zScoreResult.bb_tb_status,
+        lk_u_status: zScoreResult.lk_u_status,
+        lila_u_status: zScoreResult.lila_u_status,
+        imt_u_status: zScoreResult.imt_u_status,
         statusAkhir: zScoreResult.statusAkhir as Status,
       },
       include: {
@@ -248,14 +253,16 @@ export class MeasurementService {
     });
 
     const existingMap = new Map(existing.map((m) => [m.localId, m.id]));
-    const balitaIds = [...new Set(measurements.map((m) => m.balitaId))];
+    const balitaIds = Array.from(new Set(measurements.map((m) => m.balitaId)));
 
     // Optimization: Fetch all Balita info once for Z-Score calculation
     const balitas = await prisma.balita.findMany({
       where: { id: { in: balitaIds } },
       select: { id: true, tanggalLahir: true, jenisKelamin: true },
     });
-    const balitaMap = new Map(balitas.map((b) => [b.id, b]));
+    const balitaMap = new Map<string, (typeof balitas)[0]>(
+      balitas.map((b) => [b.id, b])
+    );
 
     const toCreate: Prisma.MeasurementCreateManyInput[] = [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -271,6 +278,8 @@ export class MeasurementService {
         umurBulan,
         m.beratBadan,
         m.tinggiBadan,
+        m.lingkarKepala,
+        m.lila,
         balita.jenisKelamin
       );
 
@@ -279,6 +288,9 @@ export class MeasurementService {
         bb_u_status: zScore.bb_u_status,
         tb_u_status: zScore.tb_u_status,
         bb_tb_status: zScore.bb_tb_status,
+        lk_u_status: zScore.lk_u_status,
+        lila_u_status: zScore.lila_u_status,
+        imt_u_status: zScore.imt_u_status,
         statusAkhir: zScore.statusAkhir as Status,
         isSynced: true,
       };

@@ -225,7 +225,9 @@ export const updateMeasurement = asyncHandler(
 
 export const getPublicMeasurement = asyncHandler(
   async (req: Request, res: Response) => {
-    const result = await measurementService.getPublicInfo(req.params.id);
+    const result = await measurementService.getPublicInfo(
+      String(req.params.id)
+    );
     sendSuccess(res, "Data publik berhasil diambil", result);
   }
 );
@@ -237,7 +239,10 @@ export const accessMeasurement = asyncHandler(
       throw new BadRequestError("Tanggal lahir wajib diisi");
     }
 
-    const result = await measurementService.verifyAccess(req.params.id, dob);
+    const result = await measurementService.verifyAccess(
+      String(req.params.id),
+      dob
+    );
     sendSuccess(res, "Akses berhasil diverifikasi", result.data);
   }
 );
