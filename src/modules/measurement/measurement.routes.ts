@@ -553,7 +553,7 @@ router.patch(
   updateMeasurement
 );
 
-// Admin only for delete
-router.delete("/:id", authorize("ADMIN"), deleteMeasurement);
+// Admin and Relawan can delete
+router.delete("/:id", authorize("ADMIN", "RELAWAN"), deleteMeasurement);
 
 export default router;

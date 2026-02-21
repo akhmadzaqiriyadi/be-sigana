@@ -6,7 +6,7 @@ import {
 } from "./measurement.service";
 import { sendSuccess, sendCreated } from "@/utils/response";
 import { BadRequestError } from "@/utils/ApiError";
-import { Posisi, Status } from "@prisma/client";
+import { Posisi } from "@prisma/client";
 import { validateQuestionnaireResponse } from "@/constants/questionnaires";
 
 export const getAllMeasurements = asyncHandler(
@@ -22,9 +22,7 @@ export const getAllMeasurements = asyncHandler(
     const relawanId =
       typeof req.query.relawanId === "string" ? req.query.relawanId : undefined;
     const status =
-      typeof req.query.status === "string"
-        ? (req.query.status as Status)
-        : undefined;
+      typeof req.query.status === "string" ? req.query.status : undefined;
     const updatedAfter =
       typeof req.query.updatedAfter === "string"
         ? new Date(req.query.updatedAfter)
@@ -34,6 +32,8 @@ export const getAllMeasurements = asyncHandler(
         ? new Date(req.query.createdAfter)
         : undefined;
     const search = typeof req.query.q === "string" ? req.query.q : undefined;
+    const timeRange =
+      typeof req.query.timeRange === "string" ? req.query.timeRange : undefined;
 
     const result = await measurementService.findAll(
       page,
@@ -45,6 +45,7 @@ export const getAllMeasurements = asyncHandler(
         status,
         updatedAfter,
         createdAfter,
+        timeRange,
       },
       req.user as { role: string; userId: string }
     );

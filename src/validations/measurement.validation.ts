@@ -45,7 +45,11 @@ export const getMeasurementSchema = z.object({
     balitaId: z.string().uuid().optional(),
     status: z.preprocess(
       (val) => (val === "" ? undefined : val),
-      z.enum(["HIJAU", "KUNING", "MERAH"]).optional()
+      z.string().optional()
+    ),
+    timeRange: z.preprocess(
+      (val) => (val === "" ? undefined : val),
+      z.enum(["all", "today", "7_days", "30_days", "this_month"]).optional()
     ),
     updatedAfter: z
       .string()

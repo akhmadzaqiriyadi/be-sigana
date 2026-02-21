@@ -37,9 +37,10 @@ export class MeasurementService {
       search?: string;
       balitaId?: string;
       relawanId?: string;
-      status?: Status;
+      status?: string;
       updatedAfter?: Date;
       createdAfter?: Date;
+      timeRange?: string;
     },
     currentUser?: { role: string; userId: string }
   ) {
@@ -72,9 +73,52 @@ export class MeasurementService {
       };
     }
     if (filters?.balitaId) where.balitaId = filters.balitaId;
-    if (filters?.status) where.statusAkhir = filters.status;
+    if (filters?.status) {
+      const mapping: Record<string, string> = {
+        normal: "HIJAU",
+        berisiko: "KUNING",
+        buruk: "MERAH",
+        hijau: "HIJAU",
+        kuning: "KUNING",
+        merah: "MERAH",
+      };
+      const statusArray = filters.status
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .map((s) => mapping[s] || s.toUpperCase());
+
+      if (statusArray.length > 0) {
+        where.statusAkhir = { in: statusArray as Status[] };
+      }
+    }
     if (filters?.updatedAfter) where.updatedAt = { gt: filters.updatedAfter };
     if (filters?.createdAfter) where.createdAt = { gt: filters.createdAfter };
+
+    if (filters?.timeRange && filters.timeRange !== "all") {
+      const now = new Date();
+      const startDate = new Date();
+
+      switch (filters.timeRange) {
+        case "today":
+          startDate.setHours(0, 0, 0, 0);
+          break;
+        case "7_days":
+          startDate.setDate(now.getDate() - 7);
+          break;
+        case "30_days":
+          startDate.setDate(now.getDate() - 30);
+          break;
+        case "this_month":
+          startDate.setDate(1);
+          startDate.setHours(0, 0, 0, 0);
+          break;
+      }
+
+      where.createdAt = {
+        ...((where.createdAt as Record<string, unknown>) || {}),
+        gte: startDate,
+      };
+    }
 
     const [measurements, total] = await Promise.all([
       prisma.measurement.findMany({
