@@ -20,16 +20,31 @@ export const getAllBalitas = asyncHandler(
       ? String(req.query.search)
       : (req.query.q as string);
 
+    const statusGizi = req.query.statusGizi
+      ? String(req.query.statusGizi)
+      : undefined;
+    const period = req.query.period ? String(req.query.period) : undefined;
+    const isSanitasiBuruk = req.query.isSanitasiBuruk === "true";
+    const isKsiRendah = req.query.isKsiRendah === "true";
+    const isLilaRendah = req.query.isLilaRendah === "true";
+
     const result = await balitaService.findAll(page, limit, {
       villageId,
       poskoId,
       search,
+      statusGizi,
+      period,
+      isSanitasiBuruk,
+      isKsiRendah,
+      isLilaRendah,
     });
+
     sendSuccess(
       res,
       "Data balita berhasil diambil",
       result.balitas,
-      result.meta
+      result.meta,
+      result.summary
     );
   }
 );

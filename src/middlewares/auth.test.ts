@@ -1,5 +1,6 @@
 import { describe, expect, it, mock, beforeEach } from "bun:test";
 import { Request, Response, NextFunction } from "express";
+import { Role } from "@prisma/client";
 
 // We need a real JsonWebTokenError class for instanceof checks in middleware
 class JsonWebTokenError extends Error {
@@ -68,7 +69,7 @@ describe("Auth Middleware", () => {
       const mockPayload = {
         userId: "user-1",
         email: "test@test.com",
-        role: "RELAWAN",
+        role: "RELAWAN" as Role,
       };
       jwtMock.verify.mockReturnValue(mockPayload);
 
@@ -125,7 +126,7 @@ describe("Auth Middleware", () => {
       const mockPayload = {
         userId: "user-1",
         email: "test@test.com",
-        role: "RELAWAN",
+        role: "RELAWAN" as Role,
       };
       jwtMock.verify.mockReturnValue(mockPayload);
 

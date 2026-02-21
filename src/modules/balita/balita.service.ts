@@ -24,15 +24,26 @@ export class BalitaService {
   async findAll(
     page = 1,
     limit = 10,
-    filters?: { villageId?: number; poskoId?: number; search?: string }
+    filters?: {
+      villageId?: number;
+      poskoId?: number;
+      search?: string;
+      statusGizi?: string;
+      period?: string;
+      isSanitasiBuruk?: boolean;
+      isKsiRendah?: boolean;
+      isLilaRendah?: boolean;
+    }
   ) {
     const skip = (page - 1) * limit;
-    const where: Record<string, unknown> = {};
 
-    if (filters?.villageId) where.villageId = filters.villageId;
-    if (filters?.poskoId) where.poskoId = filters.poskoId;
+    // Base Where Object (without statusGizi, to calculate summary for the panel)
+    const baseWhere: any = {};
+
+    if (filters?.villageId) baseWhere.villageId = filters.villageId;
+    if (filters?.poskoId) baseWhere.poskoId = filters.poskoId;
     if (filters?.search) {
-      where.OR = [
+      baseWhere.OR = [
         { namaAnak: { contains: filters.search, mode: "insensitive" } },
         { namaOrtu: { contains: filters.search, mode: "insensitive" } },
         {
@@ -48,48 +59,178 @@ export class BalitaService {
       ];
     }
 
-    const [balitas, total] = await Promise.all([
-      prisma.balita.findMany({
-        where,
-        skip,
-        take: limit,
-        include: {
-          village: {
-            select: {
-              id: true,
-              name: true,
-              districts: true,
-            },
-          },
-          posko: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          measurements: {
-            select: {
-              id: true,
-              statusAkhir: true,
-              createdAt: true,
-            },
-            orderBy: { createdAt: "desc" },
-            take: 1,
-          },
-        },
-        orderBy: { createdAt: "desc" },
-      }),
-      prisma.balita.count({ where }),
-    ]);
+    const baseMeasurementFilter: any = {};
+    let hasBaseMeasurement = false;
 
-    // Calculate age in months for each balita
-    const balitasWithAge = balitas.map((balita) => ({
-      ...balita,
-      umurBulan: this.calculateAgeInMonths(balita.tanggalLahir),
-    }));
+    if (filters?.period) {
+      hasBaseMeasurement = true;
+      if (filters.period === "6_months") {
+        baseMeasurementFilter.createdAt = {
+          gte: new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000),
+        };
+      } else if (filters.period.includes(",")) {
+        const [start, end] = filters.period.split(",");
+        if (start && end) {
+          baseMeasurementFilter.createdAt = {
+            gte: new Date(start),
+            lte: new Date(end),
+          };
+        }
+      }
+    }
+
+    if (filters?.isLilaRendah) {
+      hasBaseMeasurement = true;
+      baseMeasurementFilter.lila = { lt: 11.5 };
+    }
+
+    // Fallback search approach for JSON fields to avoid TypeScript configuration errors
+    if (filters?.isSanitasiBuruk) {
+      hasBaseMeasurement = true;
+      baseMeasurementFilter.sanitationData = {
+        path: ["isSanitasiBuruk"],
+        equals: true,
+      };
+    }
+    if (filters?.isKsiRendah) {
+      hasBaseMeasurement = true;
+      baseMeasurementFilter.medicalHistoryData = {
+        path: ["isKsiRendah"],
+        equals: true,
+      };
+    }
+
+    if (hasBaseMeasurement) {
+      baseWhere.measurements = { some: baseMeasurementFilter };
+    }
+
+    // Where Object with statusGizi
+    const where = { ...baseWhere };
+    if (filters?.statusGizi) {
+      const status = filters.statusGizi.toLowerCase();
+      const stFilter: any = { ...baseMeasurementFilter };
+
+      if (status === "normal") stFilter.statusAkhir = "HIJAU";
+      else if (status === "warning") stFilter.statusAkhir = "KUNING";
+      else if (status === "faltering") {
+        stFilter.statusAkhir = "MERAH";
+        stFilter.bb_tb_status = { not: { contains: "Buruk" } };
+      } else if (status === "gizi buruk") {
+        stFilter.statusAkhir = "MERAH";
+        stFilter.bb_tb_status = { contains: "Buruk" };
+      }
+
+      where.measurements = { some: stFilter };
+    }
+
+    const countWhere = (statusAkhir: string, additional: any = {}) => ({
+      ...baseWhere,
+      measurements: {
+        some: {
+          ...baseMeasurementFilter,
+          statusAkhir,
+          ...additional,
+        },
+      },
+    });
+
+    const [balitas, total, totalBase, normal, warning, faltering, giziBuruk] =
+      await Promise.all([
+        prisma.balita.findMany({
+          where,
+          skip,
+          take: limit,
+          include: {
+            village: {
+              select: {
+                id: true,
+                name: true,
+                districts: true,
+              },
+            },
+            posko: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            measurements: {
+              select: {
+                id: true,
+                beratBadan: true,
+                tinggiBadan: true,
+                lila: true,
+                statusAkhir: true,
+                bb_tb_status: true,
+                createdAt: true,
+                relawan: {
+                  select: { name: true },
+                },
+              },
+              orderBy: { createdAt: "desc" },
+              take: 1,
+            },
+          },
+          orderBy: { createdAt: "desc" },
+        }),
+        prisma.balita.count({ where }),
+        prisma.balita.count({ where: baseWhere }),
+        prisma.balita.count({ where: countWhere("HIJAU") }),
+        prisma.balita.count({ where: countWhere("KUNING") }),
+        prisma.balita.count({
+          where: countWhere("MERAH", {
+            bb_tb_status: { not: { contains: "Buruk" } },
+          }),
+        }),
+        prisma.balita.count({
+          where: countWhere("MERAH", { bb_tb_status: { contains: "Buruk" } }),
+        }),
+      ]);
+
+    const mappedBalitas = balitas.map((balita) => {
+      const latest = balita.measurements[0];
+      const statusGiziStr =
+        latest?.statusAkhir === "HIJAU"
+          ? "Normal"
+          : latest?.statusAkhir === "KUNING"
+            ? "Warning"
+            : latest?.statusAkhir === "MERAH" &&
+                latest?.bb_tb_status?.includes("Buruk")
+              ? "Gizi Buruk"
+              : latest?.statusAkhir === "MERAH"
+                ? "Faltering"
+                : "Unknown";
+
+      return {
+        id: balita.id,
+        namaAnak: balita.namaAnak,
+        namaOrtu: balita.namaOrtu,
+        jenisKelamin: balita.jenisKelamin,
+        tanggalLahir: balita.tanggalLahir,
+        umur: `${this.calculateAgeInMonths(balita.tanggalLahir)} bln`,
+        village: balita.village,
+        latestMeasurement: latest
+          ? {
+              statusGizi: statusGiziStr,
+              bb: latest.beratBadan,
+              tb: latest.tinggiBadan,
+              lila: latest.lila,
+              tanggalInput: latest.createdAt,
+              petugas: latest.relawan?.name,
+            }
+          : null,
+      };
+    });
 
     return {
-      balitas: balitasWithAge,
+      balitas: mappedBalitas,
+      summary: {
+        totalTerdata: totalBase,
+        normal,
+        warning,
+        faltering,
+        giziBuruk,
+      },
       meta: {
         page,
         limit,

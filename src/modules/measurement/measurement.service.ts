@@ -260,6 +260,8 @@ export class MeasurementService {
         umurBulan,
         data.beratBadan || measurement.beratBadan,
         data.tinggiBadan || measurement.tinggiBadan,
+        data.lingkarKepala || measurement.lingkarKepala,
+        data.lila || measurement.lila,
         measurement.balita.jenisKelamin
       );
 
@@ -544,7 +546,7 @@ export class MeasurementService {
 
     const latestPerBalita = new Map<
       string,
-      { statusAkhir: string; villageId: string; villageName: string }
+      { statusAkhir: string; villageId: number; villageName: string }
     >();
     diseaseData.forEach((m) => {
       if (m.balita.village) {
@@ -557,7 +559,7 @@ export class MeasurementService {
     });
 
     const villageStatsMap = new Map<
-      string,
+      number,
       {
         name: string;
         total: number;

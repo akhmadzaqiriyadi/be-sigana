@@ -10,6 +10,7 @@ interface ApiResponse<T = unknown> {
     total?: number;
     totalPages?: number;
   };
+  summary?: any;
 }
 
 export const sendResponse = <T>(
@@ -17,13 +18,15 @@ export const sendResponse = <T>(
   statusCode: number,
   message: string,
   data?: T,
-  meta?: ApiResponse["meta"]
+  meta?: ApiResponse["meta"],
+  summary?: any
 ): Response<ApiResponse<T>> => {
   return res.status(statusCode).json({
     success: statusCode >= 200 && statusCode < 300,
     message,
     data,
     meta,
+    summary,
   });
 };
 
@@ -31,9 +34,10 @@ export const sendSuccess = <T>(
   res: Response,
   message: string,
   data?: T,
-  meta?: ApiResponse["meta"]
+  meta?: ApiResponse["meta"],
+  summary?: any
 ): Response<ApiResponse<T>> => {
-  return sendResponse(res, 200, message, data, meta);
+  return sendResponse(res, 200, message, data, meta, summary);
 };
 
 export const sendCreated = <T>(
