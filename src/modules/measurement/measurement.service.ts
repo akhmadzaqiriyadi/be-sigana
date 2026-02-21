@@ -402,45 +402,253 @@ export class MeasurementService {
     });
   }
 
-  async getStatistics() {
-    const [total, byStatus, recentMeasurements, uniqueChildren, totalSynced] =
-      await Promise.all([
-        prisma.measurement.count(),
-        prisma.measurement.groupBy({
-          by: ["statusAkhir"],
-          _count: {
-            statusAkhir: true,
-          },
-        }),
-        prisma.measurement.findMany({
-          take: 10,
-          orderBy: { createdAt: "desc" },
-          include: {
-            balita: {
-              select: {
-                namaAnak: true,
-              },
+  async getStatistics(period?: string, villageId?: string) {
+    const now = new Date();
+
+    let periodMonths = 6;
+    if (period === "1m") periodMonths = 1;
+    else if (period === "3m") periodMonths = 3;
+    else if (period === "1y") periodMonths = 12;
+    else if (period === "all") periodMonths = 60; // Up to 5 years for trend
+
+    const startDate = new Date(
+      now.getFullYear(),
+      now.getMonth() - periodMonths + 1,
+      1
+    );
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const baseWhere: Prisma.MeasurementWhereInput = { deletedAt: null };
+    if (villageId && villageId !== "all") {
+      baseWhere.balita = { villageId: parseInt(villageId, 10) };
+    }
+
+    const periodWhere: Prisma.MeasurementWhereInput = {
+      ...baseWhere,
+      ...(period !== "all" ? { createdAt: { gte: startDate } } : {}),
+    };
+
+    const currentMonthWhere: Prisma.MeasurementWhereInput = {
+      ...baseWhere,
+      createdAt: { gte: currentMonthStart },
+    };
+
+    const lastMonthWhere: Prisma.MeasurementWhereInput = {
+      ...baseWhere,
+      createdAt: { gte: lastMonthStart, lt: currentMonthStart },
+    };
+
+    const [
+      total,
+      byStatus,
+      recentMeasurements,
+      uniqueChildren,
+      totalSynced,
+      thisMonthTotal,
+      lastMonthTotal,
+      periodData,
+      diseaseData,
+    ] = await Promise.all([
+      prisma.measurement.count({ where: periodWhere }), // Total measurements in period
+      prisma.measurement.groupBy({
+        by: ["statusAkhir"],
+        where: periodWhere,
+        _count: { statusAkhir: true },
+      }),
+      prisma.measurement.findMany({
+        take: 10,
+        where: baseWhere,
+        orderBy: { createdAt: "desc" },
+        include: {
+          balita: {
+            select: {
+              namaAnak: true,
+              village: { select: { name: true } },
+              posko: { select: { name: true } },
             },
           },
-        }),
-        prisma.measurement.findMany({
-          distinct: ["balitaId"],
-          select: { balitaId: true },
-        }),
-        prisma.measurement.count({
-          where: { isSynced: true },
-        }),
-      ]);
+        },
+      }),
+      prisma.measurement.findMany({
+        distinct: ["balitaId"],
+        where: periodWhere,
+        select: { balitaId: true },
+      }),
+      prisma.measurement.count({
+        where: { ...periodWhere, isSynced: true },
+      }),
+      prisma.measurement.count({ where: currentMonthWhere }),
+      prisma.measurement.count({ where: lastMonthWhere }),
+      prisma.measurement.findMany({
+        where: periodWhere,
+        select: { createdAt: true, statusAkhir: true },
+      }),
+      prisma.measurement.findMany({
+        where: periodWhere,
+        orderBy: { createdAt: "asc" },
+        select: {
+          balitaId: true,
+          statusAkhir: true,
+          balita: {
+            select: {
+              village: { select: { id: true, name: true } },
+            },
+          },
+        },
+      }),
+    ]);
 
-    const statusCounts = {
+    const statusCounts: Record<string, number> = {
       HIJAU: 0,
       KUNING: 0,
       MERAH: 0,
     };
 
     byStatus.forEach((item) => {
-      statusCounts[item.statusAkhir] = item._count.statusAkhir;
+      statusCounts[item.statusAkhir as string] = item._count.statusAkhir;
     });
+
+    const momPercentage =
+      lastMonthTotal === 0
+        ? thisMonthTotal > 0
+          ? 100
+          : 0
+        : ((thisMonthTotal - lastMonthTotal) / lastMonthTotal) * 100;
+
+    const trendMap = new Map<
+      string,
+      { month: string; HIJAU: number; KUNING: number; MERAH: number }
+    >();
+
+    const maxMonthsForTrend = Math.min(periodMonths, 12);
+    for (let i = maxMonthsForTrend - 1; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const monthName = d.toLocaleString("id-ID", { month: "short" });
+      trendMap.set(key, { month: monthName, HIJAU: 0, KUNING: 0, MERAH: 0 });
+    }
+
+    periodData.forEach((m) => {
+      const d = new Date(m.createdAt);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const trendItem = trendMap.get(key);
+      if (trendItem) {
+        if (m.statusAkhir === "HIJAU") trendItem.HIJAU++;
+        else if (m.statusAkhir === "KUNING") trendItem.KUNING++;
+        else if (m.statusAkhir === "MERAH") trendItem.MERAH++;
+      }
+    });
+
+    const trend = Array.from(trendMap.values());
+
+    const latestPerBalita = new Map<
+      string,
+      { statusAkhir: string; villageId: string; villageName: string }
+    >();
+    diseaseData.forEach((m) => {
+      if (m.balita.village) {
+        latestPerBalita.set(m.balitaId, {
+          statusAkhir: m.statusAkhir as string,
+          villageId: m.balita.village.id,
+          villageName: m.balita.village.name,
+        });
+      }
+    });
+
+    const villageStatsMap = new Map<
+      string,
+      {
+        name: string;
+        total: number;
+        HIJAU: number;
+        KUNING: number;
+        MERAH: number;
+      }
+    >();
+
+    latestPerBalita.forEach((data) => {
+      if (!villageStatsMap.has(data.villageId)) {
+        villageStatsMap.set(data.villageId, {
+          name: data.villageName,
+          total: 0,
+          HIJAU: 0,
+          KUNING: 0,
+          MERAH: 0,
+        });
+      }
+      const vStat = villageStatsMap.get(data.villageId)!;
+      vStat.total++;
+      if (data.statusAkhir === "HIJAU") vStat.HIJAU++;
+      else if (data.statusAkhir === "KUNING") vStat.KUNING++;
+      else if (data.statusAkhir === "MERAH") vStat.MERAH++;
+    });
+
+    const topRiskVillages = Array.from(villageStatsMap.values())
+      .map((v) => {
+        const riskCount = v.KUNING + v.MERAH;
+        const riskPercentage = v.total > 0 ? (riskCount / v.total) * 100 : 0;
+        return {
+          nama: v.name,
+          totalBalita: v.total,
+          riskPercentage: parseFloat(riskPercentage.toFixed(2)),
+          HIJAU: v.HIJAU,
+          KUNING: v.KUNING,
+          MERAH: v.MERAH,
+        };
+      })
+      .sort((a, b) => b.riskPercentage - a.riskPercentage)
+      .slice(0, 10);
+
+    const insights: Array<{
+      type: "success" | "warning" | "info";
+      message: string;
+    }> = [];
+
+    if (momPercentage > 10) {
+      insights.push({
+        type: "info",
+        message: `Terjadi peningkatan ${momPercentage.toFixed(1)}% partisipasi pengukuran bulan ini dibandingkan bulan lalu.`,
+      });
+    } else if (momPercentage < -10) {
+      insights.push({
+        type: "warning",
+        message: `Tingkat partisipasi menurun. Terdapat penurunan ${Math.abs(momPercentage).toFixed(1)}% pengukuran bulan ini.`,
+      });
+    }
+
+    const totalChildrenLatest = latestPerBalita.size;
+    if (totalChildrenLatest > 0) {
+      let riskChildren = 0;
+      latestPerBalita.forEach((data) => {
+        if (data.statusAkhir === "KUNING" || data.statusAkhir === "MERAH")
+          riskChildren++;
+      });
+      const badPercentage = (riskChildren / totalChildrenLatest) * 100;
+      if (badPercentage > 20) {
+        insights.push({
+          type: "warning",
+          message: `Perhatian: ${badPercentage.toFixed(1)}% balita yang diukur dalam periode ini didiagnosis berstatus risiko gizi (KUNING / MERAH).`,
+        });
+      } else if (badPercentage < 5) {
+        insights.push({
+          type: "success",
+          message: `Kondisi gizi balita sangat baik. Hanya ${badPercentage.toFixed(1)}% balita dengan risiko gizi.`,
+        });
+      } else {
+        insights.push({
+          type: "success",
+          message: `Kondisi gizi balita secara umum cukup terkendali.`,
+        });
+      }
+    }
+
+    if (topRiskVillages.length > 0 && topRiskVillages[0].riskPercentage > 30) {
+      insights.push({
+        type: "warning",
+        message: `Desa ${topRiskVillages[0].nama} membutuhkan intervensi. ${topRiskVillages[0].riskPercentage}% data pengukurannya berstatus KUNING atau MERAH.`,
+      });
+    }
 
     return {
       total,
@@ -448,6 +656,10 @@ export class MeasurementService {
       totalSynced,
       statusCounts,
       recentMeasurements,
+      momPercentage,
+      trend,
+      topRiskVillages,
+      insights,
     };
   }
 

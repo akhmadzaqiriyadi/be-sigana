@@ -201,8 +201,19 @@ export const syncPull = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const getStatistics = asyncHandler(
-  async (_req: Request, res: Response) => {
-    const statistics = await measurementService.getStatistics();
+  async (req: Request, res: Response) => {
+    const period =
+      typeof req.query.period === "string" ? req.query.period : undefined;
+    const villageId =
+      typeof req.query.villageId === "string" ? req.query.villageId : undefined;
+
+    // Explicitly handle "all" for villageId
+    const finalVillageId = villageId === "all" ? undefined : villageId;
+
+    const statistics = await measurementService.getStatistics(
+      period,
+      finalVillageId
+    );
     sendSuccess(res, "Statistik berhasil diambil", statistics);
   }
 );

@@ -404,6 +404,15 @@ import {
  *     summary: Get measurement statistics
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: period
+ *         schema: { type: string, enum: ['1m', '3m', '6m', '1y', 'all'], default: '6m' }
+ *         description: Time period for the statistics
+ *       - in: query
+ *         name: villageId
+ *         schema: { type: string, default: 'all' }
+ *         description: Filter statistics by a specific village ID or 'all'
  *     responses:
  *       200:
  *         description: Statistics data
@@ -425,6 +434,34 @@ import {
  *                         HIJAU: { type: integer }
  *                         KUNING: { type: integer }
  *                         MERAH: { type: integer }
+ *                     momPercentage: { type: number }
+ *                     trend:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           month: { type: string }
+ *                           HIJAU: { type: integer }
+ *                           KUNING: { type: integer }
+ *                           MERAH: { type: integer }
+ *                     topRiskVillages:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           nama: { type: string }
+ *                           totalBalita: { type: integer }
+ *                           riskPercentage: { type: number }
+ *                           HIJAU: { type: integer }
+ *                           KUNING: { type: integer }
+ *                           MERAH: { type: integer }
+ *                     insights:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           type: { type: string, enum: ['success', 'warning', 'info'] }
+ *                           message: { type: string }
  *                     recentMeasurements:
  *                       type: array
  *                       items: { $ref: '#/components/schemas/Measurement' }
