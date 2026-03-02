@@ -1,0 +1,24 @@
+# ============================================================
+# TEMPLATE PENGGUNA SISTEM SIGANA
+# ============================================================
+# Petunjuk:
+#   - Baris yang diawali # adalah komentar, tidak akan dibaca
+#   - Isi data mulai dari baris di bawah baris header (nama,email,...)
+#   - Jangan ubah nama kolom pada baris header
+#
+# Keterangan Kolom:
+#   nama              : Nama lengkap pengguna
+#   email             : Alamat email (harus unik, dipakai untuk login)
+#   password          : Password awal (minimal 8 karakter)
+#   role              : Pilih salah satu: RELAWAN / ADMIN / STAKEHOLDER
+#   sudah_terverifikasi: Apakah akun langsung aktif? Isi: Ya / Tidak
+# ============================================================
+nama,email,password,role,sudah_terverifikasi
+Admin SiGana,admin@sigana.id,password123,ADMIN,Ya
+Relawan SiGana,relawan@sigana.id,password123,RELAWAN,Ya
+Budi Santoso,budi.santoso@sigana.id,password123,RELAWAN,Ya
+Siti Aminah,siti.aminah@sigana.id,password123,RELAWAN,Ya
+Dewi Rahayu,dewi.rahayu@sigana.id,password123,RELAWAN,Ya
+Hendra Wijaya,hendra.wijaya@sigana.id,password123,RELAWAN,Ya
+Nurul Hidayah,nurul.hidayah@sigana.id,password123,RELAWAN,Ya
+Dinas Kesehatan Cianjur,dinkes@sigana.id,password123,STAKEHOLDER,Ya

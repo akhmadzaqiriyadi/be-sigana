@@ -69,7 +69,6 @@ async function verifySync() {
         tanggalLahir: "2024-01-01",
         jenisKelamin: "L",
         villageId: village.id,
-        poskoId: null,
       },
       {
         localId: localId2,
@@ -78,7 +77,6 @@ async function verifySync() {
         tanggalLahir: "2024-02-01",
         jenisKelamin: "P",
         villageId: village.id,
-        poskoId: null,
       },
     ],
   };

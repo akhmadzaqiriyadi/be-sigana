@@ -12,9 +12,6 @@ export const getAllBalitas = asyncHandler(
     const villageId = req.query.villageId
       ? parseInt(String(req.query.villageId))
       : undefined;
-    const poskoId = req.query.poskoId
-      ? parseInt(String(req.query.poskoId))
-      : undefined;
 
     const search = req.query.search
       ? String(req.query.search)
@@ -30,7 +27,6 @@ export const getAllBalitas = asyncHandler(
 
     const result = await balitaService.findAll(page, limit, {
       villageId,
-      poskoId,
       search,
       statusGizi,
       period,
@@ -58,14 +54,8 @@ export const getBalitaById = asyncHandler(
 
 export const createBalita = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      namaAnak,
-      namaOrtu,
-      tanggalLahir,
-      jenisKelamin,
-      villageId,
-      poskoId,
-    } = req.body;
+    const { namaAnak, namaOrtu, tanggalLahir, jenisKelamin, villageId } =
+      req.body;
 
     if (
       !namaAnak ||
@@ -89,7 +79,6 @@ export const createBalita = asyncHandler(
       tanggalLahir: new Date(tanggalLahir),
       jenisKelamin: jenisKelamin as Gender,
       villageId: parseInt(String(villageId)),
-      poskoId: poskoId ? parseInt(String(poskoId)) : undefined,
     });
     sendCreated(res, "Data balita berhasil dibuat", balita);
   }
@@ -97,14 +86,8 @@ export const createBalita = asyncHandler(
 
 export const updateBalita = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      namaAnak,
-      namaOrtu,
-      tanggalLahir,
-      jenisKelamin,
-      villageId,
-      poskoId,
-    } = req.body;
+    const { namaAnak, namaOrtu, tanggalLahir, jenisKelamin, villageId } =
+      req.body;
 
     const balita = await balitaService.update(String(req.params.id), {
       namaAnak,
@@ -112,7 +95,6 @@ export const updateBalita = asyncHandler(
       tanggalLahir: tanggalLahir ? new Date(tanggalLahir) : undefined,
       jenisKelamin: jenisKelamin as Gender | undefined,
       villageId: villageId ? parseInt(String(villageId)) : undefined,
-      poskoId: poskoId ? parseInt(String(poskoId)) : undefined,
     });
     sendSuccess(res, "Data balita berhasil diperbarui", balita);
   }

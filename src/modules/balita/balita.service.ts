@@ -8,7 +8,6 @@ interface CreateBalitaInput {
   tanggalLahir: Date;
   jenisKelamin: Gender;
   villageId: number;
-  poskoId?: number;
 }
 
 interface UpdateBalitaInput {
@@ -17,7 +16,6 @@ interface UpdateBalitaInput {
   tanggalLahir?: Date;
   jenisKelamin?: Gender;
   villageId?: number;
-  poskoId?: number;
 }
 
 export class BalitaService {
@@ -26,7 +24,6 @@ export class BalitaService {
     limit = 10,
     filters?: {
       villageId?: number;
-      poskoId?: number;
       search?: string;
       statusGizi?: string;
       period?: string;
@@ -41,18 +38,12 @@ export class BalitaService {
     const baseWhere: any = {};
 
     if (filters?.villageId) baseWhere.villageId = filters.villageId;
-    if (filters?.poskoId) baseWhere.poskoId = filters.poskoId;
     if (filters?.search) {
       baseWhere.OR = [
         { namaAnak: { contains: filters.search, mode: "insensitive" } },
         { namaOrtu: { contains: filters.search, mode: "insensitive" } },
         {
           village: {
-            name: { contains: filters.search, mode: "insensitive" },
-          },
-        },
-        {
-          posko: {
             name: { contains: filters.search, mode: "insensitive" },
           },
         },
@@ -148,12 +139,6 @@ export class BalitaService {
                 districts: true,
               },
             },
-            posko: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
             measurements: {
               select: {
                 id: true,
@@ -245,7 +230,6 @@ export class BalitaService {
       where: { id },
       include: {
         village: true,
-        posko: true,
         measurements: {
           include: {
             relawan: {
@@ -280,17 +264,6 @@ export class BalitaService {
       throw new NotFoundError("Desa tidak ditemukan");
     }
 
-    // Verify posko exists if provided
-    if (data.poskoId) {
-      const posko = await prisma.posko.findUnique({
-        where: { id: data.poskoId },
-      });
-
-      if (!posko) {
-        throw new NotFoundError("Posko tidak ditemukan");
-      }
-    }
-
     const balita = await prisma.balita.create({
       data,
       include: {
@@ -299,12 +272,6 @@ export class BalitaService {
             id: true,
             name: true,
             districts: true,
-          },
-        },
-        posko: {
-          select: {
-            id: true,
-            name: true,
           },
         },
       },
@@ -332,12 +299,6 @@ export class BalitaService {
             id: true,
             name: true,
             districts: true,
-          },
-        },
-        posko: {
-          select: {
-            id: true,
-            name: true,
           },
         },
       },
@@ -377,7 +338,6 @@ export class BalitaService {
       tanggalLahir: string | Date; // Accept string or Date
       jenisKelamin: Gender;
       villageId: number;
-      poskoId?: number | null;
       createdAt?: string;
     }[]
   ) {
@@ -398,21 +358,6 @@ export class BalitaService {
           error: `Village ID ${data.villageId} not found`,
         });
         continue;
-      }
-
-      // Verify posko if exists
-      if (data.poskoId) {
-        const posko = await prisma.posko.findUnique({
-          where: { id: data.poskoId },
-        });
-        if (!posko) {
-          results.push({
-            localId: data.localId,
-            status: "failed",
-            error: `Posko ID ${data.poskoId} not found`,
-          });
-          continue;
-        }
       }
 
       // 2. Deduplication Strategy
@@ -447,7 +392,6 @@ export class BalitaService {
             tanggalLahir: birthDate,
             jenisKelamin: data.jenisKelamin,
             villageId: data.villageId,
-            poskoId: data.poskoId || null,
             // We can optionally use createdAt from offline if we want to preserve history
             // But usually server time is better for consistency unless specified.
             // Requirement didn't specify strict timestamp sync, so we let default(now()) or use it if important.

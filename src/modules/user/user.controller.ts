@@ -128,3 +128,28 @@ export const getPendingUsers = asyncHandler(
     sendSuccess(res, "Data pengguna tertunda berhasil diambil", users);
   }
 );
+
+export const changePassword = asyncHandler(
+  async (req: Request, res: Response) => {
+    const targetId = String(req.params.id);
+    const requesterId = req.user!.userId;
+    const requesterRole = req.user!.role;
+
+    // Only the owner or an admin may change a password
+    if (requesterId !== targetId && requesterRole !== "ADMIN") {
+      res.status(403).json({
+        success: false,
+        message: "Akses ditolak",
+      });
+      return;
+    }
+
+    const { currentPassword, newPassword } = req.body;
+    const result = await userService.changePassword(
+      targetId,
+      currentPassword,
+      newPassword
+    );
+    sendSuccess(res, result.message);
+  }
+);

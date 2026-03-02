@@ -66,9 +66,6 @@ export class MeasurementService {
               name: { contains: filters.search, mode: "insensitive" },
             },
           },
-          {
-            posko: { name: { contains: filters.search, mode: "insensitive" } },
-          },
         ],
       };
     }
@@ -165,7 +162,6 @@ export class MeasurementService {
         balita: {
           include: {
             village: true,
-            posko: true,
           },
         },
         relawan: {
@@ -410,6 +406,7 @@ export class MeasurementService {
     let periodMonths = 6;
     if (period === "1m") periodMonths = 1;
     else if (period === "3m") periodMonths = 3;
+    else if (period === "8m") periodMonths = 8;
     else if (period === "1y") periodMonths = 12;
     else if (period === "all") periodMonths = 60; // Up to 5 years for trend
 
@@ -467,7 +464,6 @@ export class MeasurementService {
             select: {
               namaAnak: true,
               village: { select: { name: true } },
-              posko: { select: { name: true } },
             },
           },
         },
@@ -494,7 +490,7 @@ export class MeasurementService {
           statusAkhir: true,
           balita: {
             select: {
-              village: { select: { id: true, name: true } },
+              village: { select: { id: true, name: true, districts: true } },
             },
           },
         },
@@ -546,7 +542,12 @@ export class MeasurementService {
 
     const latestPerBalita = new Map<
       string,
-      { statusAkhir: string; villageId: number; villageName: string }
+      {
+        statusAkhir: string;
+        villageId: number;
+        villageName: string;
+        villageDistricts: string;
+      }
     >();
     diseaseData.forEach((m) => {
       if (m.balita.village) {
@@ -554,6 +555,7 @@ export class MeasurementService {
           statusAkhir: m.statusAkhir as string,
           villageId: m.balita.village.id,
           villageName: m.balita.village.name,
+          villageDistricts: m.balita.village.districts,
         });
       }
     });
@@ -561,7 +563,9 @@ export class MeasurementService {
     const villageStatsMap = new Map<
       number,
       {
+        id: number;
         name: string;
+        districts: string;
         total: number;
         HIJAU: number;
         KUNING: number;
@@ -572,7 +576,9 @@ export class MeasurementService {
     latestPerBalita.forEach((data) => {
       if (!villageStatsMap.has(data.villageId)) {
         villageStatsMap.set(data.villageId, {
+          id: data.villageId,
           name: data.villageName,
+          districts: data.villageDistricts,
           total: 0,
           HIJAU: 0,
           KUNING: 0,
@@ -591,7 +597,9 @@ export class MeasurementService {
         const riskCount = v.KUNING + v.MERAH;
         const riskPercentage = v.total > 0 ? (riskCount / v.total) * 100 : 0;
         return {
+          id: v.id,
           nama: v.name,
+          districts: v.districts,
           totalBalita: v.total,
           riskPercentage: parseFloat(riskPercentage.toFixed(2)),
           HIJAU: v.HIJAU,
@@ -687,7 +695,7 @@ export class MeasurementService {
       include: {
         balita: {
           include: {
-            posko: { select: { name: true } },
+            village: { select: { name: true } },
           },
         },
       },
@@ -703,7 +711,7 @@ export class MeasurementService {
           include: {
             balita: {
               include: {
-                posko: { select: { name: true } },
+                village: { select: { name: true } },
               },
             },
           },
@@ -726,7 +734,7 @@ export class MeasurementService {
       maskedName: maskedName,
       gender: measurement.balita.jenisKelamin,
       createdAt: measurement.createdAt,
-      poskoName: measurement.balita.posko?.name || "Tidak ada posko",
+      poskoName: measurement.balita.village?.name || "Tidak diketahui",
     };
   }
 
@@ -749,7 +757,6 @@ export class MeasurementService {
       where: { id: balitaId },
       include: {
         village: true,
-        posko: true,
       },
     });
 

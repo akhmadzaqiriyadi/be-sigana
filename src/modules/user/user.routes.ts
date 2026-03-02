@@ -8,6 +8,7 @@ import {
   deleteUser,
   getPendingUsers,
   updateProfile,
+  changePassword,
 } from "./user.controller";
 import {
   authenticate,
@@ -15,7 +16,10 @@ import {
   authorizeAdminOrOwner,
 } from "@/middlewares/auth";
 import { validate } from "@/middlewares/validate";
-import { verifyUserSchema } from "@/validations/master.validation";
+import {
+  verifyUserSchema,
+  changePasswordSchema,
+} from "@/validations/master.validation";
 import {
   updateProfileSchema,
   createUserSchema,
@@ -704,6 +708,7 @@ router.get("/pending", authorize("ADMIN"), getPendingUsers);
 router.get("/:id", authorize("ADMIN"), getUserById);
 router.patch("/:id", authorizeAdminOrOwner, updateUser);
 router.put("/:id", authorize("ADMIN"), updateUser);
+router.patch("/:id/password", validate(changePasswordSchema), changePassword);
 router.patch(
   "/:id/verify",
   authorize("ADMIN"),

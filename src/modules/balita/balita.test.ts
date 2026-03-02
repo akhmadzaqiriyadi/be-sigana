@@ -16,9 +16,6 @@ mock.module("../../config/db", () => ({
     village: {
       findUnique: mock(),
     },
-    posko: {
-      findUnique: mock(),
-    },
   },
 }));
 
@@ -30,7 +27,6 @@ describe("BalitaService", () => {
     tanggalLahir: new Date("2024-01-01"),
     jenisKelamin: "L",
     villageId: 1,
-    poskoId: 1,
   };
 
   beforeEach(() => {
@@ -40,7 +36,6 @@ describe("BalitaService", () => {
   describe("create", () => {
     it("should create a balita", async () => {
       (prisma.village.findUnique as any).mockResolvedValue({ id: 1 });
-      (prisma.posko.findUnique as any).mockResolvedValue({ id: 1 });
       (prisma.balita.create as any).mockResolvedValue(mockBalita);
 
       const result = await balitaService.create({
@@ -49,7 +44,6 @@ describe("BalitaService", () => {
         tanggalLahir: new Date("2024-01-01"),
         jenisKelamin: "L",
         villageId: 1,
-        poskoId: 1,
       });
 
       expect(result.id).toEqual(mockBalita.id);

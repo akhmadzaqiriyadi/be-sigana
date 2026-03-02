@@ -1,0 +1,18 @@
+# ============================================================
+# TEMPLATE DATA DESA
+# ============================================================
+# Petunjuk:
+#   - Baris yang diawali # adalah komentar, tidak akan dibaca
+#   - Setiap baris = satu desa
+#   - nama_desa akan dipakai sebagai referensi di file lain (posko, balita)
+#
+# Keterangan Kolom:
+#   nama_desa     : Nama desa (contoh: Sukamaju)
+#   nama_kecamatan: Nama kecamatan tempat desa berada
+# ============================================================
+nama_desa,nama_kecamatan
+Sukamaju,Cianjur
+Mekarwangi,Warungkondang
+Cijedil,Cugenang
+Mekarsari,Cibeber
+Cibulakan,Pacet

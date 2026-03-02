@@ -1,0 +1,26 @@
+# ============================================================
+# TEMPLATE DATA POSKO PENGUNGSIAN
+# ============================================================
+# Petunjuk:
+#   - Baris yang diawali # adalah komentar, tidak akan dibaca
+#   - Kolom nama_desa HARUS sama persis dengan yang ada di file 02_desa.csv
+#   - latitude & longitude boleh dikosongkan (opsional, untuk peta)
+#   - Format koordinat: angka desimal, contoh: -6.817 dan 107.141
+#
+# Keterangan Kolom:
+#   nama_posko : Nama posko/lokasi pos (contoh: Posko Sukamaju 1)
+#   nama_desa  : Nama desa tempat posko berada (harus ada di 02_desa.csv)
+#   latitude   : Koordinat lintang (opsional, boleh kosong)
+#   longitude  : Koordinat bujur   (opsional, boleh kosong)
+# ============================================================
+nama_posko,nama_desa,latitude,longitude
+Posko Sukamaju 1,Sukamaju,-6.817,107.141
+Posko Sukamaju 2,Sukamaju,-6.812,107.146
+Posko Mekarwangi 1,Mekarwangi,-6.856,107.092
+Posko Mekarwangi 2,Mekarwangi,-6.851,107.097
+Posko Cijedil 1,Cijedil,-6.904,107.072
+Posko Cijedil 2,Cijedil,-6.899,107.077
+Posko Mekarsari 1,Mekarsari,-6.979,107.133
+Posko Mekarsari 2,Mekarsari,-6.974,107.138
+Posko Cibulakan 1,Cibulakan,-6.857,107.218
+Posko Cibulakan 2,Cibulakan,-6.852,107.223

@@ -31,7 +31,7 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *       - in: query
  *         name: search
  *         schema: { type: string }
- *         description: Search by namaAnak, namaOrtu, Village, or Posko
+ *         description: Search by namaAnak, namaOrtu, or Village
  *       - in: query
  *         name: q
  *         schema: { type: string }
@@ -40,10 +40,6 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *         name: villageId
  *         schema: { type: integer }
  *         description: Filter by village ID
- *       - in: query
- *         name: poskoId
- *         schema: { type: integer }
- *         description: Filter by posko ID
  *     responses:
  *       200:
  *         description: Paginated list of balitas
@@ -64,7 +60,6 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                       tanggalLahir: { type: string, format: date-time }
  *                       jenisKelamin: { type: string, enum: ['L', 'P'] }
  *                       villageId: { type: integer }
- *                       poskoId: { type: integer }
  *                       umurBulan: { type: integer, description: 'Calculated age in months' }
  *                       village:
  *                         type: object
@@ -72,12 +67,6 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                           id: { type: integer }
  *                           name: { type: string }
  *                           districts: { type: string }
- *                       posko:
- *                         type: object
- *                         nullable: true
- *                         properties:
- *                           id: { type: integer }
- *                           name: { type: string }
  *                       measurements:
  *                         type: array
  *                         description: Latest measurement only (max 1)
@@ -129,7 +118,6 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *                     tanggalLahir: { type: string, format: 'date' }
  *                     jenisKelamin: { type: string, enum: ['L', 'P'] }
  *                     villageId: { type: integer }
- *                     poskoId: { type: integer }
  *                     createdAt: { type: string, format: 'date-time' }
  *     responses:
  *       200:
@@ -183,6 +171,7 @@ router.post(
 
 // Admin only for update and delete
 router.put("/:id", authorize("ADMIN"), updateBalita);
+router.patch("/:id", authorize("ADMIN"), updateBalita);
 router.delete("/:id", authorize("ADMIN"), deleteBalita);
 
 export default router;

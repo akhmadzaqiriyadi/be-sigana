@@ -1,7 +1,11 @@
 import prisma from "@/config/db";
 import bcrypt from "bcryptjs";
 import { Role, Prisma } from "@prisma/client";
-import { NotFoundError, ConflictError } from "@/utils/ApiError";
+import {
+  NotFoundError,
+  ConflictError,
+  UnauthorizedError,
+} from "@/utils/ApiError";
 
 interface UpdateUserInput {
   name?: string;
@@ -218,6 +222,34 @@ export class UserService {
       },
       orderBy: { createdAt: "desc" },
     });
+  }
+
+  async changePassword(
+    id: string,
+    currentPassword: string,
+    newPassword: string
+  ) {
+    const user = await prisma.user.findFirst({
+      where: { id, deletedAt: null },
+      select: { id: true, password: true },
+    });
+
+    if (!user) {
+      throw new NotFoundError("Pengguna tidak ditemukan");
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+      throw new UnauthorizedError("Password saat ini tidak sesuai");
+    }
+
+    const hashed = await bcrypt.hash(newPassword, 12);
+    await prisma.user.update({
+      where: { id },
+      data: { password: hashed },
+    });
+
+    return { message: "Password berhasil diubah" };
   }
 }
 

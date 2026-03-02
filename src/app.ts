@@ -10,7 +10,6 @@ import { errorHandler, notFoundHandler } from "./middlewares/errorHandler";
 import authRoutes from "./modules/auth/auth.routes";
 import userRoutes from "./modules/user/user.routes";
 import villageRoutes from "./modules/village/village.routes";
-import poskoRoutes from "./modules/posko/posko.routes";
 import balitaRoutes from "./modules/balita/balita.routes";
 import measurementRoutes from "./modules/measurement/measurement.routes";
 import { openApiSpecification } from "./config/swagger";
@@ -119,7 +118,6 @@ app.get("/docs", (_req, res) => {
 app.use(`${API_PREFIX}/auth`, authRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/villages`, villageRoutes);
-app.use(`${API_PREFIX}/poskos`, poskoRoutes);
 app.use(`${API_PREFIX}/balitas`, balitaRoutes);
 app.use(`${API_PREFIX}/measurements`, measurementRoutes);
 

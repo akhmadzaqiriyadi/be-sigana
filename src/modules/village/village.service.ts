@@ -32,7 +32,6 @@ export class VillageService {
         include: {
           _count: {
             select: {
-              poskos: true,
               balitas: true,
             },
           },
@@ -57,7 +56,6 @@ export class VillageService {
     const village = await prisma.village.findUnique({
       where: { id },
       include: {
-        poskos: true,
         _count: {
           select: {
             balitas: true,

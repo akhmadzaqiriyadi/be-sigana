@@ -1,0 +1,48 @@
+# ============================================================
+# TEMPLATE DATA BALITA
+# ============================================================
+# Petunjuk:
+#   - Baris yang diawali # adalah komentar, tidak akan dibaca
+#   - nama_desa HARUS sama persis dengan yang ada di file 02_desa.csv
+#   - nama_posko harus sama dengan file 03_posko.csv (boleh dikosongkan)
+#   - nama_anak akan dipakai sebagai referensi di file pengukuran (05)
+#
+# Keterangan Kolom:
+#   nama_anak    : Nama lengkap anak balita
+#   nama_ortu    : Nama orang tua / wali
+#   tanggal_lahir: Format TAHUN-BULAN-TANGGAL, contoh: 2022-05-17
+#   jenis_kelamin: L (Laki-laki) atau P (Perempuan)
+#   nama_desa    : Nama desa tempat tinggal (harus ada di 02_desa.csv)
+#   nama_posko   : Nama posko yang ditempati (opsional, boleh kosong)
+# ============================================================
+nama_anak,nama_ortu,tanggal_lahir,jenis_kelamin,nama_desa,nama_posko
+Aisah,Yayah Suryati,2022-02-12,P,Sukamaju,Posko Sukamaju 1
+Anisa Yuana,Wulan Andriani,2023-04-04,P,Sukamaju,Posko Sukamaju 1
+Arumi Safa,Siti Nuraini,2021-07-03,P,Sukamaju,Posko Sukamaju 1
+Arzan,Agus Permana,2022-12-25,L,Sukamaju,Posko Sukamaju 1
+Cahaya,Dewi Lestari,2023-03-24,P,Sukamaju,Posko Sukamaju 1
+Widara Sukma Ayu,Ratna Komala,2022-06-18,P,Sukamaju,Posko Sukamaju 1
+Gaffi,Cecep Kurniawan,2022-11-16,L,Mekarwangi,Posko Mekarwangi 1
+Nafisa Almahyra,Heni Rohaeni,2021-05-07,P,Mekarwangi,Posko Mekarwangi 1
+Raskan,Dede Supriatna,2023-02-20,L,Mekarwangi,Posko Mekarwangi 1
+Sean Arzo,Iwan Setiawan,2023-04-28,L,Mekarwangi,Posko Mekarwangi 1
+Febi Nurfatimah,Rina Marliana,2022-02-19,P,Mekarwangi,Posko Mekarwangi 1
+Arsyla Nazala,Yusi Fitriani,2023-03-02,P,Mekarwangi,Posko Mekarwangi 1
+Aghnia,Neni Susilawati,2023-10-06,P,Cijedil,Posko Cijedil 1
+M Barra,Dani Ramdhani,2023-09-28,L,Cijedil,Posko Cijedil 1
+Rizwan,Asep Hidayat,2023-10-16,L,Cijedil,Posko Cijedil 1
+Agniya Ulfah Dinillah,Teti Rohayati,2023-10-06,P,Cijedil,Posko Cijedil 1
+Hana Adiva,Sari Purnama,2021-11-03,P,Cijedil,Posko Cijedil 1
+Askana Putra,Ridwan Maulana,2023-04-18,L,Cijedil,Posko Cijedil 1
+Safia,Imas Kurniasih,2024-03-23,P,Mekarsari,Posko Mekarsari 1
+Mahzar,Rohman Soleh,2024-04-07,L,Mekarsari,Posko Mekarsari 1
+Yasmin,Fitriani Dewi,2024-04-03,P,Mekarsari,Posko Mekarsari 1
+Qiara,Euis Juariah,2022-07-16,P,Mekarsari,Posko Mekarsari 1
+Clarisa,Yanti Nurhayati,2022-12-30,P,Mekarsari,Posko Mekarsari 1
+Fathirrahman,Fahmi Fauzi,2024-06-24,L,Mekarsari,Posko Mekarsari 1
+Farid,Eneng Rohani,2024-10-28,L,Cibulakan,Posko Cibulakan 1
+Satria Mahesa,Ujang Suryana,2024-11-20,L,Cibulakan,Posko Cibulakan 1
+Chaira Nadira S,Sumiati Rahayu,2023-09-10,P,Cibulakan,Posko Cibulakan 1
+Aruna,Neneng Sariningsih,2022-10-02,P,Cibulakan,Posko Cibulakan 1
+Zerrin,Kurnia Wati,2024-04-29,P,Cibulakan,Posko Cibulakan 1
+Azmi Nur,Holid Rahman,2024-07-10,L,Cibulakan,Posko Cibulakan 1

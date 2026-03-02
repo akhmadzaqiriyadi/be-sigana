@@ -51,14 +51,8 @@ const options: swaggerJsdoc.Options = {
         },
         Posko: {
           type: "object",
-          properties: {
-            id: { type: "string", format: "uuid" },
-            name: { type: "string", example: "Posko Mawar 01" },
-            villageId: { type: "integer" },
-            latitude: { type: "number", format: "float", example: -6.2088 },
-            longitude: { type: "number", format: "float", example: 106.8456 },
-            createdAt: { type: "string", format: "date-time" },
-          },
+          description: "Entitas Posko telah dihapus dari sistem.",
+          properties: {},
         },
         Balita: {
           type: "object",
@@ -73,7 +67,6 @@ const options: swaggerJsdoc.Options = {
             },
             jenisKelamin: { type: "string", enum: ["L", "P"] },
             villageId: { type: "integer" },
-            poskoId: { type: "string", format: "uuid" },
             createdAt: { type: "string", format: "date-time" },
           },
         },
