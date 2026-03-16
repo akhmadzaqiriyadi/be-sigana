@@ -29,6 +29,9 @@ mock.module("@/config/db", () => ({
       update: mock(),
       updateMany: mock(),
     },
+    auditLog: {
+      create: mock(),
+    },
     $transaction: mock(),
   },
 }));
@@ -102,6 +105,7 @@ describe("AuthService", () => {
       (prisma as any).userSession.findUnique,
       (prisma as any).userSession.update,
       (prisma as any).userSession.updateMany,
+      (prisma as any).auditLog.create,
       (prisma as any).$transaction,
       bcrypt.hash,
       bcrypt.compare,
@@ -121,6 +125,9 @@ describe("AuthService", () => {
     ((prisma as any).userSession.update as any).mockResolvedValue(mockSession);
     ((prisma as any).userSession.updateMany as any).mockResolvedValue({
       count: 1,
+    });
+    ((prisma as any).auditLog.create as any).mockResolvedValue({
+      id: "audit-1",
     });
     ((prisma as any).$transaction as any).mockImplementation(
       async (ops: Array<Promise<unknown>>) => Promise.all(ops)

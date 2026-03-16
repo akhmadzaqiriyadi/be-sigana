@@ -41,5 +41,9 @@ export const createUserSchema = z.object({
     name: z.string().min(3, "Nama minimal 3 karakter"),
     role: z.enum(["ADMIN", "RELAWAN", "STAKEHOLDER"]).optional(),
     isVerified: z.boolean().optional(),
+    status: z.enum(["PENDING", "ACTIVE", "SUSPENDED", "DELETED"]).optional(),
+    phone: z.string().min(8, "Nomor telepon minimal 8 karakter").optional(),
+    nik: z.string().length(16, "NIK harus 16 digit").optional(),
+    villageId: z.number().int().positive().optional(),
   }),
 });

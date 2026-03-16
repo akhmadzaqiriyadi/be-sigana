@@ -7,29 +7,44 @@
 
 ## Bagian 1 — Perubahan yang Sudah Dilakukan di Backend
 
-### ✅ B1 — Endpoint `PATCH /api/v1/users/:id/password` (Baru)
+### ✅ B1 (Update 2026-03-16) — Kontrak Ganti Password Dipisah
 
 **File yang diubah:**
 
-| File                                   | Perubahan                          |
-| -------------------------------------- | ---------------------------------- |
-| `src/validations/master.validation.ts` | Tambah `changePasswordSchema`      |
-| `src/modules/user/user.service.ts`     | Tambah method `changePassword()`   |
-| `src/modules/user/user.controller.ts`  | Tambah handler `changePassword`    |
-| `src/modules/user/user.routes.ts`      | Tambah route `PATCH /:id/password` |
+| File                                   | Perubahan                                                               |
+| -------------------------------------- | ----------------------------------------------------------------------- |
+| `src/validations/master.validation.ts` | Tambah `changeOwnPasswordSchema` + `adminResetPasswordSchema`           |
+| `src/modules/user/user.service.ts`     | Tambah method `changeOwnPassword()` + `resetPasswordByAdmin()`          |
+| `src/modules/user/user.controller.ts`  | Pisah handler self-service vs admin reset                               |
+| `src/modules/user/user.routes.ts`      | Tambah `PATCH /me/password` + update `PATCH /:id/password` (admin-only) |
 
-**Request body:**
+**Endpoint 1 — Self-service**
+
+`PATCH /api/v1/users/me/password`
 
 ```json
 { "currentPassword": "string (min 1)", "newPassword": "string (min 8)" }
 ```
 
-**Aturan otorisasi:** Owner (`req.user.userId === params.id`) atau Admin. Jika `currentPassword` salah → `401`. User tidak ditemukan → `404`.
+Jika `currentPassword` salah → `401`.
+
+**Endpoint 2 — Admin reset**
+
+`PATCH /api/v1/users/:id/password`
+
+```json
+{ "newPassword": "string (min 8)" }
+```
+
+Admin tidak perlu mengirim `currentPassword` user target.
 
 **Response sukses (200):**
 
 ```json
-{ "success": true, "message": "Password berhasil diubah" }
+{
+  "success": true,
+  "message": "Password berhasil diubah | Password pengguna berhasil direset"
+}
 ```
 
 ---

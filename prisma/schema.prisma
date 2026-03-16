@@ -15,10 +15,18 @@ model User {
   email        String        @unique
   password     String
   name         String
+  phone        String?
+  nik          String?
   role         Role          @default(RELAWAN)
+  status       UserStatus    @default(PENDING)
   isVerified   Boolean       @default(false) // Verifikasi oleh Admin
+  lastLoginAt  DateTime?
+  villageId    Int?
+  village      Village?      @relation(fields: [villageId], references: [id], onDelete: SetNull)
   measurements Measurement[]
   sessions     UserSession[]
+  auditLogsAsActor  AuditLog[] @relation("AuditActor")
+  auditLogsAsTarget AuditLog[] @relation("AuditTarget")
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?     // Soft Delete
@@ -35,6 +43,13 @@ enum Role {
   STAKEHOLDER
 }
 
+enum UserStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  DELETED
+}
+
 // 2. Normalisasi Wilayah & Geo-Location
 model Village {
   id        Int      @id @default(autoincrement())
@@ -43,6 +58,7 @@ model Village {
   latitude  Float? // Koordinat untuk Peta Sebaran (dipindah dari Posko)
   longitude Float?
   isActive  Boolean  @default(true)
+  users     User[]
   balitas   Balita[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -170,6 +186,25 @@ model UserSession {
 
   @@index([userId, revokedAt])
   @@map("user_sessions")
+}
+
+model AuditLog {
+  id         String   @id @default(uuid())
+  event      String
+  module     String
+  action     String
+  actorId    String?
+  actor      User?    @relation("AuditActor", fields: [actorId], references: [id], onDelete: SetNull)
+  targetId   String?
+  target     User?    @relation("AuditTarget", fields: [targetId], references: [id], onDelete: SetNull)
+  ipAddress  String?
+  device     String?
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([targetId, createdAt])
+  @@index([actorId, createdAt])
+  @@map("audit_logs")
 }
 
 enum Posisi {

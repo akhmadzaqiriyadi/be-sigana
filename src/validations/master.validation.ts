@@ -151,9 +151,77 @@ export const verifyUserSchema = z.object({
   }),
 });
 
-export const changePasswordSchema = z.object({
+export const changeOwnPasswordSchema = z.object({
   body: z.object({
     currentPassword: z.string().min(1, "Password saat ini wajib diisi"),
     newPassword: z.string().min(8, "Password baru minimal 8 karakter"),
+  }),
+});
+
+export const adminResetPasswordSchema = z.object({
+  params: z.object({
+    id: z
+      .string()
+      .refine(
+        (value) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            value
+          ),
+        "ID User tidak valid"
+      ),
+  }),
+  body: z.object({
+    newPassword: z.string().min(8, "Password baru minimal 8 karakter"),
+  }),
+});
+
+export const updateUserStatusSchema = z.object({
+  params: z.object({
+    id: z
+      .string()
+      .refine(
+        (value) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            value
+          ),
+        "ID User tidak valid"
+      ),
+  }),
+  body: z.object({
+    status: z.enum(["PENDING", "ACTIVE", "SUSPENDED", "DELETED"]),
+  }),
+});
+
+const bulkUserIdsSchema = z
+  .array(
+    z
+      .string()
+      .refine(
+        (value) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            value
+          ),
+        "ID User tidak valid"
+      )
+  )
+  .min(1, "Minimal 1 pengguna")
+  .max(200, "Maksimal 200 pengguna per aksi bulk");
+
+export const bulkVerifyUsersSchema = z.object({
+  body: z.object({
+    userIds: bulkUserIdsSchema,
+  }),
+});
+
+export const bulkDeleteUsersSchema = z.object({
+  body: z.object({
+    userIds: bulkUserIdsSchema,
+  }),
+});
+
+export const bulkUpdateRoleSchema = z.object({
+  body: z.object({
+    userIds: bulkUserIdsSchema,
+    role: z.enum(["ADMIN", "RELAWAN", "STAKEHOLDER"]),
   }),
 });

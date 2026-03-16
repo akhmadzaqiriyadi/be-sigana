@@ -130,6 +130,24 @@ export class AuthService {
       throw new UnauthorizedError("Email atau password salah");
     }
 
+    if (user.status === "SUSPENDED") {
+      await auditService.log("auth.login.failed", {
+        actor: user.id,
+        target: user.id,
+        metadata: { reason: "user_suspended" },
+      });
+      throw new ForbiddenError("Akun Anda sedang dinonaktifkan oleh admin.");
+    }
+
+    if (user.status === "DELETED" || user.deletedAt) {
+      await auditService.log("auth.login.failed", {
+        actor: user.id,
+        target: user.id,
+        metadata: { reason: "user_deleted" },
+      });
+      throw new ForbiddenError("Akun tidak tersedia.");
+    }
+
     const accessConfig = await settingsService.getAccessConfig();
     const { emailVerification, sessionTimeout, multiDeviceLogin } =
       accessConfig;
@@ -174,8 +192,17 @@ export class AuthService {
       tokens.refreshExpiresAt
     );
 
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        lastLoginAt: new Date(),
+        status: user.status === "PENDING" ? "ACTIVE" : user.status,
+        isVerified: user.status === "PENDING" ? true : user.isVerified,
+      },
+    });
+
     await auditService.log("auth.login.success", {
-      actor: user.email,
+      actor: user.id,
       target: user.id,
       metadata: {
         role: user.role,

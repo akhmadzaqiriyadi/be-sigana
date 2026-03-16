@@ -9,6 +9,13 @@ import {
   getPendingUsers,
   updateProfile,
   changePassword,
+  resetUserPassword,
+  getUserSummary,
+  getUserActivityLogs,
+  updateUserStatus,
+  bulkVerifyUsers,
+  bulkDeleteUsers,
+  bulkUpdateUserRole,
 } from "./user.controller";
 import {
   authenticate,
@@ -18,7 +25,12 @@ import {
 import { validate } from "@/middlewares/validate";
 import {
   verifyUserSchema,
-  changePasswordSchema,
+  changeOwnPasswordSchema,
+  adminResetPasswordSchema,
+  updateUserStatusSchema,
+  bulkVerifyUsersSchema,
+  bulkDeleteUsersSchema,
+  bulkUpdateRoleSchema,
 } from "@/validations/master.validation";
 import {
   updateProfileSchema,
@@ -704,11 +716,43 @@ router.patch("/profile", validate(updateProfileSchema), updateProfile);
 // Admin only routes
 router.post("/", authorize("ADMIN"), validate(createUserSchema), createUser);
 router.get("/", authorize("ADMIN"), getAllUsers);
+router.get("/summary", authorize("ADMIN"), getUserSummary);
 router.get("/pending", authorize("ADMIN"), getPendingUsers);
+router.post(
+  "/bulk/verify",
+  authorize("ADMIN"),
+  validate(bulkVerifyUsersSchema),
+  bulkVerifyUsers
+);
+router.post(
+  "/bulk/delete",
+  authorize("ADMIN"),
+  validate(bulkDeleteUsersSchema),
+  bulkDeleteUsers
+);
+router.post(
+  "/bulk/role",
+  authorize("ADMIN"),
+  validate(bulkUpdateRoleSchema),
+  bulkUpdateUserRole
+);
+router.patch("/me/password", validate(changeOwnPasswordSchema), changePassword);
 router.get("/:id", authorize("ADMIN"), getUserById);
+router.get("/:id/activity-logs", authorize("ADMIN"), getUserActivityLogs);
 router.patch("/:id", authorizeAdminOrOwner, updateUser);
 router.put("/:id", authorize("ADMIN"), updateUser);
-router.patch("/:id/password", validate(changePasswordSchema), changePassword);
+router.patch(
+  "/:id/password",
+  authorize("ADMIN"),
+  validate(adminResetPasswordSchema),
+  resetUserPassword
+);
+router.patch(
+  "/:id/status",
+  authorize("ADMIN"),
+  validate(updateUserStatusSchema),
+  updateUserStatus
+);
 router.patch(
   "/:id/verify",
   authorize("ADMIN"),
