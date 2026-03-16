@@ -22,6 +22,10 @@ mock.module("../../config/db", () => ({
       findUnique: mock(),
       findMany: mock(),
     },
+    systemConfig: {
+      findUnique: mock(),
+      create: mock(),
+    },
   },
 }));
 
@@ -38,6 +42,21 @@ describe("MeasurementService", () => {
 
   beforeEach(() => {
     mock.restore();
+    // Re-setup threshold config via systemConfig mock (used by settingsService.getThresholdConfig)
+    ((prisma as any).systemConfig.findUnique as any).mockResolvedValue({
+      id: "threshold",
+      value: {
+        minDataPoints: 3,
+        warningEnabled: true,
+        falteringThreshold: 2,
+        badgeColors: {
+          normal: "#22c55e",
+          warning: "#eab308",
+          faltering: "#f97316",
+          giziBuruk: "#ef4444",
+        },
+      },
+    });
   });
 
   describe("findAll (RBAC)", () => {

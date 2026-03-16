@@ -18,6 +18,64 @@ const pool = new Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
+function getKbmMinimalByUsiaBulan(usiaBulan: number): number {
+  if (usiaBulan < 0 || usiaBulan > 60) {
+    throw new RangeError(`Usia bulan di luar rentang 0-60: ${usiaBulan}`);
+  }
+
+  // Patokan minimal kenaikan BB per bulan (gram)
+  if (usiaBulan <= 3) return 800;
+  if (usiaBulan <= 6) return 600;
+  if (usiaBulan <= 9) return 300;
+  if (usiaBulan <= 12) return 200;
+  return 100;
+}
+
+const WHO_DATASET_DEFAULTS = [
+  {
+    code: "BB_U",
+    label: "Berat Badan menurut Umur",
+    description: "Metadata standar WHO untuk indikator BB/U.",
+    version: "WHO 2006",
+    ageRange: "0-60 bulan",
+  },
+  {
+    code: "PB_U",
+    label: "Panjang Badan menurut Umur",
+    description: "Metadata standar WHO untuk indikator PB/U.",
+    version: "WHO 2006",
+    ageRange: "0-24 bulan",
+  },
+  {
+    code: "TB_U",
+    label: "Tinggi Badan menurut Umur",
+    description: "Metadata standar WHO untuk indikator TB/U.",
+    version: "WHO 2006",
+    ageRange: "24-60 bulan",
+  },
+  {
+    code: "BB_PB",
+    label: "Berat Badan menurut Panjang Badan",
+    description: "Metadata standar WHO untuk indikator BB/PB.",
+    version: "WHO 2006",
+    ageRange: "0-24 bulan",
+  },
+  {
+    code: "BB_TB",
+    label: "Berat Badan menurut Tinggi Badan",
+    description: "Metadata standar WHO untuk indikator BB/TB.",
+    version: "WHO 2006",
+    ageRange: "24-60 bulan",
+  },
+  {
+    code: "IMT_U",
+    label: "Indeks Massa Tubuh menurut Umur",
+    description: "Metadata standar WHO untuk indikator IMT/U.",
+    version: "WHO 2006",
+    ageRange: "0-60 bulan",
+  },
+];
+
 // ---------------------------------------------------------------------------
 // CSV Parser
 // ---------------------------------------------------------------------------
@@ -102,6 +160,9 @@ async function main() {
     await prisma.measurement.deleteMany();
     await prisma.balita.deleteMany();
     await prisma.village.deleteMany();
+    await prisma.kbmReference.deleteMany();
+    await prisma.whoDataset.deleteMany();
+    await prisma.systemConfig.deleteMany();
     await prisma.user.deleteMany();
   } catch (e) {
     console.warn("⚠️  Peringatan saat membersihkan:", e);
@@ -286,6 +347,65 @@ async function main() {
         : "")
   );
 
+  // ── 7. Seed referensi KBM, konfigurasi sistem, dan metadata WHO ───────
+  console.log("\n⚙️  Membuat data pengaturan sistem...");
+
+  for (let usiaBulan = 0; usiaBulan <= 60; usiaBulan++) {
+    await prisma.kbmReference.create({
+      data: {
+        usiaBulan,
+        kbmMinimal: getKbmMinimalByUsiaBulan(usiaBulan),
+      },
+    });
+  }
+
+  await prisma.systemConfig.createMany({
+    data: [
+      {
+        id: "threshold",
+        value: {
+          minDataPoints: 3,
+          warningEnabled: true,
+          falteringThreshold: 2,
+          badgeColors: {
+            normal: "#22c55e",
+            warning: "#eab308",
+            faltering: "#f97316",
+            giziBuruk: "#ef4444",
+          },
+        },
+      },
+      {
+        id: "access",
+        value: {
+          auditLogging: true,
+          sessionTimeout: 30,
+          multiDeviceLogin: false,
+          emailVerification: true,
+        },
+      },
+      {
+        id: "system",
+        value: {
+          lastBackup: null,
+          backupInProgress: false,
+        },
+      },
+    ],
+  });
+
+  await prisma.whoDataset.createMany({
+    data: WHO_DATASET_DEFAULTS.map((dataset) => ({
+      ...dataset,
+      lastUpdated: new Date("2025-01-01T00:00:00.000Z"),
+      isActive: true,
+    })),
+  });
+
+  console.log(
+    "   ✅ Referensi KBM, konfigurasi sistem, dan dataset WHO berhasil dibuat"
+  );
+
   // ── Ringkasan ─────────────────────────────────────────────────────────
   console.log("\n============================================");
   console.log("✅ Seeding selesai!");
@@ -293,6 +413,9 @@ async function main() {
   console.log(`   🏘️  Desa        : ${await prisma.village.count()}`);
   console.log(`   👶 Balita      : ${await prisma.balita.count()}`);
   console.log(`   📏 Pengukuran  : ${await prisma.measurement.count()}`);
+  console.log(`   📚 KBM         : ${await prisma.kbmReference.count()}`);
+  console.log(`   🧭 Config      : ${await prisma.systemConfig.count()}`);
+  console.log(`   🌐 WHO Dataset : ${await prisma.whoDataset.count()}`);
   console.log("============================================");
 }
 

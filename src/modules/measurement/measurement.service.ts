@@ -1,7 +1,11 @@
 import prisma from "@/config/db";
 import { Posisi, Status, Prisma } from "@prisma/client";
 import { NotFoundError, ForbiddenError } from "@/utils/ApiError";
-import { calculateAnthropometry } from "@/utils/zscore/calculator";
+import {
+  calculateAnthropometry,
+  AnthropometryResult,
+} from "@/utils/zscore/calculator";
+import { settingsService } from "@/modules/settings/settings.service";
 
 interface CreateMeasurementInput {
   balitaId: string;
@@ -30,6 +34,55 @@ export interface SyncMeasurementInput extends CreateMeasurementInput {
 }
 
 export class MeasurementService {
+  /**
+   * Recompute statusAkhir using configurable thresholds.
+   * falteringThreshold (default 2) maps to -SD warning boundary;
+   * critical boundary is falteringThreshold + 1.
+   * If warningEnabled=false, KUNING is suppressed (returned as HIJAU).
+   * If existingDataPoints < minDataPoints, KUNING is also suppressed.
+   */
+  private computeStatusWithThreshold(
+    zScores: AnthropometryResult["zScores"],
+    warningEnabled: boolean,
+    falteringThreshold: number,
+    existingDataPoints: number,
+    minDataPoints: number
+  ): string {
+    const boundary = falteringThreshold;
+    const criticalBoundary = falteringThreshold + 1;
+
+    const isCritical = (z: number) =>
+      z < -criticalBoundary || z > criticalBoundary;
+    const isWarning = (z: number) =>
+      (z >= -criticalBoundary && z < -boundary) ||
+      (z > boundary && z <= criticalBoundary);
+
+    if (
+      isCritical(zScores.bb_u) ||
+      isCritical(zScores.tb_u) ||
+      isCritical(zScores.bb_tb) ||
+      isCritical(zScores.lila_u) ||
+      isCritical(zScores.imt_u) ||
+      zScores.lk_u < -boundary ||
+      zScores.lk_u > boundary
+    ) {
+      return "MERAH";
+    }
+
+    if (
+      warningEnabled &&
+      existingDataPoints >= minDataPoints &&
+      (isWarning(zScores.bb_u) ||
+        isWarning(zScores.tb_u) ||
+        isWarning(zScores.bb_tb) ||
+        isWarning(zScores.lila_u) ||
+        isWarning(zScores.imt_u))
+    ) {
+      return "KUNING";
+    }
+
+    return "HIJAU";
+  }
   async findAll(
     page = 1,
     limit = 10,
@@ -203,6 +256,21 @@ export class MeasurementService {
       balita.jenisKelamin
     );
 
+    // Apply threshold config: warningEnabled, falteringThreshold, minDataPoints
+    const [thresholdConfig, existingCount] = await Promise.all([
+      settingsService.getThresholdConfig(),
+      prisma.measurement.count({
+        where: { balitaId: data.balitaId, deletedAt: null },
+      }),
+    ]);
+    const statusAkhir = this.computeStatusWithThreshold(
+      zScoreResult.zScores,
+      thresholdConfig.warningEnabled,
+      thresholdConfig.falteringThreshold,
+      existingCount,
+      thresholdConfig.minDataPoints
+    ) as Status;
+
     return prisma.measurement.create({
       data: {
         ...data,
@@ -213,7 +281,7 @@ export class MeasurementService {
         lk_u_status: zScoreResult.lk_u_status,
         lila_u_status: zScoreResult.lila_u_status,
         imt_u_status: zScoreResult.imt_u_status,
-        statusAkhir: zScoreResult.statusAkhir as Status,
+        statusAkhir,
       },
       include: {
         balita: {
@@ -261,11 +329,25 @@ export class MeasurementService {
         measurement.balita.jenisKelamin
       );
 
+      const [thresholdConfig, existingCount] = await Promise.all([
+        settingsService.getThresholdConfig(),
+        prisma.measurement.count({
+          where: { balitaId: measurement.balitaId, deletedAt: null },
+        }),
+      ]);
+      const updatedStatus = this.computeStatusWithThreshold(
+        zScoreResult.zScores,
+        thresholdConfig.warningEnabled,
+        thresholdConfig.falteringThreshold,
+        existingCount,
+        thresholdConfig.minDataPoints
+      ) as Status;
+
       zScoreUpdates = {
         bb_u_status: zScoreResult.bb_u_status,
         tb_u_status: zScoreResult.tb_u_status,
         bb_tb_status: zScoreResult.bb_tb_status,
-        statusAkhir: zScoreResult.statusAkhir as Status,
+        statusAkhir: updatedStatus,
       };
     }
 
@@ -310,6 +392,9 @@ export class MeasurementService {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updatePromises: Prisma.PrismaPromise<any>[] = [];
 
+    // Fetch threshold config once for the entire batch
+    const thresholdConfig = await settingsService.getThresholdConfig();
+
     for (const m of measurements) {
       const balita = balitaMap.get(m.balitaId);
       if (!balita) continue;
@@ -325,6 +410,15 @@ export class MeasurementService {
         balita.jenisKelamin
       );
 
+      // Apply threshold config; for sync, skip minDataPoints check (sufficient data assumed)
+      const statusAkhir = this.computeStatusWithThreshold(
+        zScore.zScores,
+        thresholdConfig.warningEnabled,
+        thresholdConfig.falteringThreshold,
+        thresholdConfig.minDataPoints, // treat as sufficient
+        thresholdConfig.minDataPoints
+      ) as Status;
+
       const data = {
         ...m,
         bb_u_status: zScore.bb_u_status,
@@ -333,7 +427,7 @@ export class MeasurementService {
         lk_u_status: zScore.lk_u_status,
         lila_u_status: zScore.lila_u_status,
         imt_u_status: zScore.imt_u_status,
-        statusAkhir: zScore.statusAkhir as Status,
+        statusAkhir,
         isSynced: true,
       };
 

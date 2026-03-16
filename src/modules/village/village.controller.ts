@@ -2,16 +2,30 @@ import { Request, Response } from "express";
 import { asyncHandler } from "@/middlewares/asyncHandler";
 import { villageService } from "./village.service";
 import { sendSuccess, sendCreated } from "@/utils/response";
-import { BadRequestError } from "@/utils/ApiError";
 
 export const getAllVillages = asyncHandler(
   async (req: Request, res: Response) => {
+    // FE Report dropdown: ?type=kecamatan → distinct kecamatan list
+    if (req.query.type === "kecamatan") {
+      const search = req.query.search ? String(req.query.search) : undefined;
+      const data = await villageService.findDistinctKecamatan(search);
+      return sendSuccess(res, "Data kecamatan berhasil diambil", data);
+    }
+
+    // FE Report dropdown: ?kecamatan=... → list desa in that kecamatan
+    if (req.query.kecamatan) {
+      const data = await villageService.findByKecamatan(
+        String(req.query.kecamatan)
+      );
+      return sendSuccess(res, "Data desa berhasil diambil", data);
+    }
+
     const page = parseInt(String(req.query.page)) || 1;
     const limit = parseInt(String(req.query.limit)) || 10;
     const search = req.query.search ? String(req.query.search) : undefined;
 
     const result = await villageService.findAll(page, limit, search);
-    sendSuccess(
+    return sendSuccess(
       res,
       "Data desa berhasil diambil",
       result.villages,
@@ -30,13 +44,15 @@ export const getVillageById = asyncHandler(
 
 export const createVillage = asyncHandler(
   async (req: Request, res: Response) => {
-    const { name, districts } = req.body;
+    const { name, districts, latitude, longitude, isActive } = req.body;
 
-    if (!name || !districts) {
-      throw new BadRequestError("Nama dan kecamatan wajib diisi");
-    }
-
-    const village = await villageService.create({ name, districts });
+    const village = await villageService.create({
+      name,
+      districts,
+      latitude,
+      longitude,
+      isActive,
+    });
     sendCreated(res, "Desa berhasil dibuat", village);
   }
 );
@@ -44,9 +60,15 @@ export const createVillage = asyncHandler(
 export const updateVillage = asyncHandler(
   async (req: Request, res: Response) => {
     const id = parseInt(String(req.params.id));
-    const { name, districts } = req.body;
+    const { name, districts, latitude, longitude, isActive } = req.body;
 
-    const village = await villageService.update(id, { name, districts });
+    const village = await villageService.update(id, {
+      name,
+      districts,
+      latitude,
+      longitude,
+      isActive,
+    });
     sendSuccess(res, "Desa berhasil diperbarui", village);
   }
 );

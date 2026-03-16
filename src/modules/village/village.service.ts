@@ -4,11 +4,17 @@ import { NotFoundError } from "@/utils/ApiError";
 interface CreateVillageInput {
   name: string;
   districts: string;
+  latitude?: number;
+  longitude?: number;
+  isActive?: boolean;
 }
 
 interface UpdateVillageInput {
   name?: string;
   districts?: string;
+  latitude?: number;
+  longitude?: number;
+  isActive?: boolean;
 }
 
 export class VillageService {
@@ -87,6 +93,46 @@ export class VillageService {
     return prisma.village.update({
       where: { id },
       data,
+    });
+  }
+
+  /**
+   * GET /villages?type=kecamatan
+   * Returns a deduplicated list of kecamatan (district) names.
+   */
+  async findDistinctKecamatan(search?: string) {
+    const where: Record<string, unknown> = {};
+    if (search) {
+      where.districts = { contains: search, mode: "insensitive" };
+    }
+
+    const villages = await prisma.village.findMany({
+      where,
+      select: { districts: true },
+      orderBy: { districts: "asc" },
+    });
+
+    // Deduplicate
+    const kecamatanSet = new Set(villages.map((v) => v.districts));
+    return Array.from(kecamatanSet).map((name) => ({ name }));
+  }
+
+  /**
+   * GET /villages?kecamatan=Kec.Mekarsari
+   * Returns all desa (villages) belonging to the given kecamatan.
+   */
+  async findByKecamatan(kecamatan: string) {
+    return prisma.village.findMany({
+      where: { districts: { contains: kecamatan, mode: "insensitive" } },
+      select: {
+        id: true,
+        name: true,
+        districts: true,
+        latitude: true,
+        longitude: true,
+        isActive: true,
+      },
+      orderBy: { name: "asc" },
     });
   }
 

@@ -18,11 +18,13 @@ model User {
   role         Role          @default(RELAWAN)
   isVerified   Boolean       @default(false) // Verifikasi oleh Admin
   measurements Measurement[]
+  sessions     UserSession[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   deletedAt    DateTime?     // Soft Delete
   refreshToken String?       // Hashed Refresh Token for Single Session Strategy
   passwordResets PasswordReset[]
+  reports        Report[]
 
   @@map("users")
 }
@@ -40,11 +42,46 @@ model Village {
   districts String // Nama Kecamatan
   latitude  Float? // Koordinat untuk Peta Sebaran (dipindah dari Posko)
   longitude Float?
+  isActive  Boolean  @default(true)
   balitas   Balita[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@map("villages")
+}
+
+model KbmReference {
+  id         Int      @id @default(autoincrement())
+  usiaBulan  Int      @unique
+  kbmMinimal Int
+  updatedAt  DateTime @updatedAt
+  updatedBy  String?
+
+  @@map("kbm_references")
+}
+
+model SystemConfig {
+  id        String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+  updatedBy String?
+
+  @@map("system_configs")
+}
+
+model WhoDataset {
+  id          Int      @id @default(autoincrement())
+  code        String   @unique
+  label       String
+  description String
+  version     String
+  lastUpdated DateTime
+  ageRange    String
+  isActive    Boolean  @default(true)
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?
+
+  @@map("who_datasets")
 }
 
 // 3. Data Master Balita (Induk)
@@ -120,9 +157,53 @@ model PasswordReset {
   @@map("password_resets")
 }
 
+model UserSession {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenId   String    @unique
+  tokenHash String
+  expiresAt DateTime
+  revokedAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([userId, revokedAt])
+  @@map("user_sessions")
+}
+
 enum Posisi {
   TERLENTANG
   BERDIRI
+}
+
+// 5. Laporan Gizi
+model Report {
+  id            String       @id @default(uuid())
+  title         String
+  format        ReportFormat
+  status        ReportStatus @default(PROCESSING)
+  config        Json         // Stores GenerateReportDTO
+  filePath      String?      // Path to generated file on disk
+  generatedAt   DateTime?
+  generatedById String
+  generatedBy   User         @relation(fields: [generatedById], references: [id], onDelete: Cascade)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@map("reports")
+}
+
+enum ReportFormat {
+  PDF
+  EXCEL
+  CSV
+}
+
+enum ReportStatus {
+  PROCESSING
+  DONE
+  FAILED
 }
 
 enum Status {

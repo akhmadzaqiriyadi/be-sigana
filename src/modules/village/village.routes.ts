@@ -136,7 +136,10 @@ import { authenticate, authorize } from "@/middlewares/auth";
  *               message: 'Terjadi kesalahan pada server'
  */
 import { validate } from "@/middlewares/validate";
-import { createVillageSchema } from "@/validations/master.validation";
+import {
+  createVillageSchema,
+  updateVillageSchema,
+} from "@/validations/master.validation";
 
 const router = Router();
 
@@ -153,7 +156,12 @@ router.post(
   validate(createVillageSchema),
   createVillage
 );
-router.put("/:id", authorize("ADMIN"), updateVillage);
+router.put(
+  "/:id",
+  authorize("ADMIN"),
+  validate(updateVillageSchema),
+  updateVillage
+);
 router.delete("/:id", authorize("ADMIN"), deleteVillage);
 
 export default router;

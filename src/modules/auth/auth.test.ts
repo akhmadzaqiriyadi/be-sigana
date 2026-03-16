@@ -18,6 +18,18 @@ mock.module("@/config/db", () => ({
       findUnique: mock(),
       delete: mock(),
     },
+    systemConfig: {
+      findUnique: mock(),
+      create: mock(),
+    },
+    userSession: {
+      count: mock(),
+      create: mock(),
+      findUnique: mock(),
+      update: mock(),
+      updateMany: mock(),
+    },
+    $transaction: mock(),
   },
 }));
 
@@ -41,6 +53,13 @@ mock.module("@/modules/email/email.service", () => ({
   },
 }));
 
+const DEFAULT_ACCESS_CONFIG = {
+  auditLogging: true,
+  sessionTimeout: 30,
+  multiDeviceLogin: true, // true so existing login tests pass (user has refreshToken)
+  emailVerification: true,
+};
+
 describe("AuthService", () => {
   const mockUser = {
     id: "user-123",
@@ -50,6 +69,20 @@ describe("AuthService", () => {
     role: "RELAWAN",
     isVerified: true,
     refreshToken: "valid_hashed_token",
+  };
+
+  const mockSession = {
+    id: "session-1",
+    userId: "user-123",
+    tokenId: "sess-1",
+    tokenHash: "valid_hashed_token",
+    expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+    revokedAt: null,
+    user: {
+      id: "user-123",
+      email: "test@example.com",
+      role: "RELAWAN",
+    },
   };
 
   beforeEach(() => {
@@ -62,6 +95,14 @@ describe("AuthService", () => {
       prisma.passwordReset.deleteMany,
       prisma.passwordReset.findUnique,
       prisma.passwordReset.delete,
+      (prisma as any).systemConfig.findUnique,
+      (prisma as any).systemConfig.create,
+      (prisma as any).userSession.count,
+      (prisma as any).userSession.create,
+      (prisma as any).userSession.findUnique,
+      (prisma as any).userSession.update,
+      (prisma as any).userSession.updateMany,
+      (prisma as any).$transaction,
       bcrypt.hash,
       bcrypt.compare,
       jwt.sign,
@@ -72,10 +113,31 @@ describe("AuthService", () => {
     // Default mock implementations
     (prisma.user.findUnique as any).mockResolvedValue(mockUser);
     (prisma.user.update as any).mockResolvedValue(mockUser);
+    ((prisma as any).userSession.count as any).mockResolvedValue(0);
+    ((prisma as any).userSession.create as any).mockResolvedValue(mockSession);
+    ((prisma as any).userSession.findUnique as any).mockResolvedValue(
+      mockSession
+    );
+    ((prisma as any).userSession.update as any).mockResolvedValue(mockSession);
+    ((prisma as any).userSession.updateMany as any).mockResolvedValue({
+      count: 1,
+    });
+    ((prisma as any).$transaction as any).mockImplementation(
+      async (ops: Array<Promise<unknown>>) => Promise.all(ops)
+    );
     (bcrypt.hash as any).mockResolvedValue("new_hashed_token");
     (bcrypt.compare as any).mockResolvedValue(true);
     (jwt.sign as any).mockReturnValue("jwt_token");
-    (jwt.verify as any).mockReturnValue({ userId: mockUser.id });
+    (jwt.verify as any).mockReturnValue({
+      userId: mockUser.id,
+      sessionId: "sess-1",
+    });
+
+    // systemConfig mock for settingsService.getAccessConfig (used by auth login/refresh)
+    ((prisma as any).systemConfig.findUnique as any).mockResolvedValue({
+      id: "access",
+      value: DEFAULT_ACCESS_CONFIG,
+    });
   });
 
   describe("login", () => {
@@ -90,12 +152,73 @@ describe("AuthService", () => {
 
       expect(result).toHaveProperty("accessToken");
       expect(result).toHaveProperty("refreshToken");
+      expect(result).toHaveProperty("cookieMaxAge");
 
-      // Verify DB update (Single Session enforcement)
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-        data: { refreshToken: "new_hashed_token" },
+      // Verify DB update
+      expect((prisma as any).userSession.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: mockUser.id,
+          tokenHash: "new_hashed_token",
+        }),
       });
+    });
+
+    it("should reject login when concurrent session exists and multiDeviceLogin=false", async () => {
+      ((prisma as any).systemConfig.findUnique as any).mockResolvedValue({
+        id: "access",
+        value: { ...DEFAULT_ACCESS_CONFIG, multiDeviceLogin: false },
+      });
+      ((prisma as any).userSession.count as any).mockResolvedValue(1);
+
+      let error: any;
+      try {
+        await authService.login({
+          email: "test@example.com",
+          password: "password",
+        });
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.statusCode).toBe(409);
+    });
+
+    it("should reject login when emailVerification=true and user not verified", async () => {
+      (prisma.user.findUnique as any).mockResolvedValue({
+        ...mockUser,
+        isVerified: false,
+        refreshToken: null,
+      });
+
+      let error: any;
+      try {
+        await authService.login({
+          email: "test@example.com",
+          password: "password",
+        });
+      } catch (e) {
+        error = e;
+      }
+      expect(error).toBeDefined();
+      expect(error.statusCode).toBe(403);
+    });
+
+    it("should allow login when emailVerification=false even if user not verified", async () => {
+      (prisma.user.findUnique as any).mockResolvedValue({
+        ...mockUser,
+        isVerified: false,
+        refreshToken: null,
+      });
+      ((prisma as any).systemConfig.findUnique as any).mockResolvedValue({
+        id: "access",
+        value: { ...DEFAULT_ACCESS_CONFIG, emailVerification: false },
+      });
+
+      const result = await authService.login({
+        email: "test@example.com",
+        password: "password",
+      });
+      expect(result).toHaveProperty("accessToken");
     });
   });
 
@@ -108,10 +231,16 @@ describe("AuthService", () => {
       expect(result).toHaveProperty("accessToken");
       expect(result).toHaveProperty("refreshToken");
 
-      // Verify rotation: DB updated with NEW token hash
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-        data: { refreshToken: "new_hashed_token" },
+      // Verify rotation: old session revoked and new session created
+      expect((prisma as any).userSession.update).toHaveBeenCalledWith({
+        where: { tokenId: "sess-1" },
+        data: { revokedAt: expect.any(Date) },
+      });
+      expect((prisma as any).userSession.create).toHaveBeenCalledWith({
+        data: expect.objectContaining({
+          userId: mockUser.id,
+          tokenHash: "new_hashed_token",
+        }),
       });
     });
 
@@ -135,20 +264,19 @@ describe("AuthService", () => {
         }
       }
 
-      // Verify REVOCATION (setting refreshToken to null)
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-        data: { refreshToken: null },
+      // Verify REVOCATION (all active sessions revoked)
+      expect((prisma as any).userSession.updateMany).toHaveBeenCalledWith({
+        where: {
+          userId: mockUser.id,
+          revokedAt: null,
+        },
+        data: { revokedAt: expect.any(Date) },
       });
     });
 
     it("should fail if user is already logged out (Scenario 5 - part 2)", async () => {
-      // If Device B logged in, Device A's DB token is different (or null if logged out)
-      // Here we simulate user has null token in DB
-      (prisma.user.findUnique as any).mockResolvedValue({
-        ...mockUser,
-        refreshToken: null,
-      });
+      // Simulate missing session in store
+      ((prisma as any).userSession.findUnique as any).mockResolvedValue(null);
 
       try {
         await authService.refreshToken("some_token");
@@ -162,23 +290,32 @@ describe("AuthService", () => {
     it("should nullify refresh token in DB", async () => {
       await authService.logout(mockUser.id);
 
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-        data: { refreshToken: null },
+      expect((prisma as any).userSession.updateMany).toHaveBeenCalledWith({
+        where: {
+          userId: mockUser.id,
+          revokedAt: null,
+        },
+        data: { revokedAt: expect.any(Date) },
       });
     });
   });
 
   describe("logoutByRefreshToken", () => {
     it("should decode refresh token and nullify session in DB", async () => {
-      (jwt.verify as any).mockReturnValue({ userId: mockUser.id });
+      (jwt.verify as any).mockReturnValue({
+        userId: mockUser.id,
+        sessionId: "sess-1",
+      });
 
       await authService.logoutByRefreshToken("valid_refresh_token");
 
       expect(jwt.verify).toHaveBeenCalled();
-      expect(prisma.user.update).toHaveBeenCalledWith({
-        where: { id: mockUser.id },
-        data: { refreshToken: null },
+      expect((prisma as any).userSession.updateMany).toHaveBeenCalledWith({
+        where: {
+          tokenId: "sess-1",
+          revokedAt: null,
+        },
+        data: { revokedAt: expect.any(Date) },
       });
     });
 

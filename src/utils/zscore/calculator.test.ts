@@ -1,44 +1,86 @@
 import { describe, expect, test } from "bun:test";
 import { ZScoreCalculator } from "./calculator";
+import { WHO_STANDARDS } from "./standards";
+
+function calculateLmsZ(val: number, L: number, M: number, S: number): number {
+  if (Math.abs(L) < 0.0000001) {
+    return Math.log(val / M) / S;
+  }
+
+  return (Math.pow(val / M, L) - 1) / (L * S);
+}
 
 describe("ZScoreCalculator", () => {
   const calculator = new ZScoreCalculator();
 
   test("interpolates LMS correctly", () => {
-    // Test internal interpolation logic implicitly via calculation
-    // Age 6 months (exact match in our constants)
-    // Boy: L=0.0435, M=7.9392, S=0.11438
-    // Weight: 7.9392 (Median) -> Z should be 0
-    const result = calculator.calculate(6, 7.9392, 60, 0, 0, "L");
-    expect(Math.abs(result.zScores.bb_u)).toBeLessThan(0.01);
+    const bbUStandardsBoy = WHO_STANDARDS.find(
+      (s) => s.sex === "L" && s.measure === "bb_u"
+    );
+    const month6 = bbUStandardsBoy?.data.find((d) => d.month === 6);
+
+    if (!month6) {
+      throw new Error("Missing WHO standard for BB/U boy month 6");
+    }
+
+    // If weight equals median M at exact month, Z-score should be ~0.
+    const result = calculator.calculate(6, month6.M, 60, 0, 0, "L");
+    expect(Math.abs(result.zScores.bb_u)).toBeLessThan(0.000001);
     expect(result.bb_u_status).toBe("Berat Badan Normal");
   });
 
   test("interpolates between months", () => {
-    // Age 3 months (between 1 and 6)
-    // Checkpoints:
-    // 1mo: L=0.1360, M=4.4709, S=0.12643
-    // 6mo: L=0.0435, M=7.9392, S=0.11438
-    // Fraction for 3mo: (3-1)/(6-1) = 2/5 = 0.4
-    // Expected M = 4.4709 + (7.9392 - 4.4709)*0.4 = 4.4709 + 1.38732 = 5.858
+    const bbUStandardsBoy = WHO_STANDARDS.find(
+      (s) => s.sex === "L" && s.measure === "bb_u"
+    );
+    const data = bbUStandardsBoy?.data;
+    const targetMonth = 3.5;
 
-    // If weight = 5.858, Z should be approx 0
-    const result = calculator.calculate(3, 5.858, 60, 0, 0, "L");
-    expect(Math.abs(result.zScores.bb_u)).toBeLessThan(0.05);
+    if (!data?.length) {
+      throw new Error("Missing WHO standards for BB/U interpolation test");
+    }
+
+    const prev = [...data]
+      .filter((d) => d.month <= targetMonth)
+      .sort((a, b) => b.month - a.month)[0];
+    const next = [...data]
+      .filter((d) => d.month >= targetMonth)
+      .sort((a, b) => a.month - b.month)[0];
+
+    if (!prev || !next || prev.month === next.month) {
+      throw new Error("Could not resolve interpolation bounds for BB/U test");
+    }
+
+    const fraction = (targetMonth - prev.month) / (next.month - prev.month);
+    const interpolatedM = prev.M + (next.M - prev.M) * fraction;
+
+    // If weight equals interpolated median M, Z-score should be ~0.
+    const result = calculator.calculate(
+      targetMonth,
+      interpolatedM,
+      60,
+      0,
+      0,
+      "L"
+    );
+    expect(Math.abs(result.zScores.bb_u)).toBeLessThan(0.000001);
   });
 
   test("calculates positive Z-score correctly", () => {
-    // Age 12 months BOY
-    // M=9.6480, S=0.11181, L=0.0324
-    // Case: Weight = 11kg
-    // Formula: ((11/9.648)^0.0324 - 1) / (0.0324 * 0.11181)
-    // 1.140132^0.0324 = 1.00427
-    // Num = 0.00427
-    // Denom = 0.003622
-    // Z = 1.18
+    const bbUStandardsBoy = WHO_STANDARDS.find(
+      (s) => s.sex === "L" && s.measure === "bb_u"
+    );
+    const month12 = bbUStandardsBoy?.data.find((d) => d.month === 12);
+
+    if (!month12) {
+      throw new Error("Missing WHO standard for BB/U boy month 12");
+    }
+
     const result = calculator.calculate(12, 11, 75, 0, 0, "L");
-    expect(result.zScores.bb_u).toBeGreaterThan(1);
-    expect(result.zScores.bb_u).toBeLessThan(1.3);
+    const expected = calculateLmsZ(11, month12.L, month12.M, month12.S);
+
+    expect(result.zScores.bb_u).toBeCloseTo(expected, 6);
+    expect(result.zScores.bb_u).toBeGreaterThan(0);
   });
 
   test("identifies Stunting (TB/U)", () => {

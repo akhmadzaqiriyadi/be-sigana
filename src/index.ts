@@ -1,6 +1,7 @@
 import app from "./app";
 import { env } from "./config/env";
 import { prisma } from "./config/db";
+import { bootstrapWhoDatasetsFromCsv } from "./config/datasetBootstrap";
 import { logger } from "./utils/logger";
 
 const startServer = async (): Promise<void> => {
@@ -9,6 +10,9 @@ const startServer = async (): Promise<void> => {
     await prisma.$connect();
     await prisma.$executeRaw`SELECT 1`;
     logger.info("✅ Database connected successfully");
+
+    await bootstrapWhoDatasetsFromCsv();
+    logger.info("✅ WHO datasets synced from CSV config");
 
     app.listen(env.PORT, () => {
       logger.info(`🚀 Server running on http://localhost:${env.PORT}`);

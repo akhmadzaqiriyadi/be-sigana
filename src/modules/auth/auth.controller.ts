@@ -27,10 +27,11 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     throw new BadRequestError("Email dan password wajib diisi");
   }
 
-  const { user, accessToken, refreshToken } = await authService.login({
-    email,
-    password,
-  });
+  const { user, accessToken, refreshToken, cookieMaxAge } =
+    await authService.login({
+      email,
+      password,
+    });
 
   // Set refresh token in httpOnly cookie
   const cookieOptions = {
@@ -38,7 +39,7 @@ export const login = asyncHandler(async (req: Request, res: Response) => {
     secure: env.NODE_ENV === "production", // Secure in production
     sameSite:
       env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const), // Lax for local dev ease, None for prod
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: cookieMaxAge,
     path: "/", // Available for all routes
   };
 
@@ -58,15 +59,18 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
     throw new BadRequestError("Refresh token wajib diisi");
   }
 
-  const { accessToken: newAccessToken, refreshToken: newRefreshToken } =
-    await authService.refreshToken(refreshToken);
+  const {
+    accessToken: newAccessToken,
+    refreshToken: newRefreshToken,
+    cookieMaxAge,
+  } = await authService.refreshToken(refreshToken);
 
   const cookieOptions = {
     httpOnly: true,
     secure: env.NODE_ENV === "production",
     sameSite:
       env.NODE_ENV === "production" ? ("none" as const) : ("lax" as const),
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    maxAge: cookieMaxAge,
     path: "/",
   };
 

@@ -12,6 +12,10 @@ import userRoutes from "./modules/user/user.routes";
 import villageRoutes from "./modules/village/village.routes";
 import balitaRoutes from "./modules/balita/balita.routes";
 import measurementRoutes from "./modules/measurement/measurement.routes";
+import reportRoutes from "./modules/report/report.routes";
+import kbmRoutes from "./modules/kbm/kbm.routes";
+import settingsRoutes from "./modules/settings/settings.routes";
+import systemRoutes from "./modules/system/system.routes";
 import { openApiSpecification } from "./config/swagger";
 
 const app: Application = express();
@@ -120,6 +124,10 @@ app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/villages`, villageRoutes);
 app.use(`${API_PREFIX}/balitas`, balitaRoutes);
 app.use(`${API_PREFIX}/measurements`, measurementRoutes);
+app.use(`${API_PREFIX}/reports`, reportRoutes);
+app.use(`${API_PREFIX}/kbm`, kbmRoutes);
+app.use(`${API_PREFIX}/settings`, settingsRoutes);
+app.use(`${API_PREFIX}/system`, systemRoutes);
 
 // Error handling
 app.use(notFoundHandler);

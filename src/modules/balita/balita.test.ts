@@ -29,6 +29,31 @@ describe("BalitaService", () => {
     villageId: 1,
   };
 
+  const mockBalitaWithLatestMeasurement = {
+    ...mockBalita,
+    village: {
+      id: 1,
+      name: "Desa Maju",
+      districts: "Kecamatan Sehat",
+      latitude: null,
+      longitude: null,
+    },
+    measurements: [
+      {
+        id: "m-1",
+        beratBadan: 7.5,
+        tinggiBadan: 67,
+        lila: 13,
+        statusAkhir: "HIJAU",
+        bb_tb_status: "Gizi Baik",
+        createdAt: new Date("2026-03-01T00:00:00.000Z"),
+        relawan: {
+          name: "Relawan A",
+        },
+      },
+    ],
+  };
+
   beforeEach(() => {
     mock.restore();
   });
@@ -75,12 +100,21 @@ describe("BalitaService", () => {
 
   describe("findAll", () => {
     it("should return paginated results", async () => {
-      (prisma.balita.findMany as any).mockResolvedValue([mockBalita]);
-      (prisma.balita.count as any).mockResolvedValue(1);
+      (prisma.balita.findMany as any).mockResolvedValue([
+        mockBalitaWithLatestMeasurement,
+      ]);
+      (prisma.balita.count as any)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0)
+        .mockResolvedValueOnce(0);
 
       const result = await balitaService.findAll(1, 10);
       expect(result.balitas).toHaveLength(1);
       expect(result.meta.total).toBe(1);
+      expect(result.summary.totalTerdata).toBe(1);
     });
   });
 });

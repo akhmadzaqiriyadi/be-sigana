@@ -1,0 +1,9 @@
+# version: WHO Mixed
+# lastUpdated: 2025-06-01
+code,label,description,version,lastUpdated,ageRange,isActive
+BB_U,BB/U Dataset,Dataset referensi SD curve BB/U (WFA),v1.0.0,2025-06-01,0-60 bulan,true
+PB_U,PB/U atau TB/U Dataset,Dataset referensi SD curve PB/U-TB/U (LFA/HFA),v1.0.0,2025-06-01,0-60 bulan,true
+BB_TB,BB/TB atau BB/PB Dataset,Dataset referensi SD curve BB/TB-BB/PB (WFL/WFH),v1.0.0,2025-06-01,0-60 bulan,true
+LK_U,LK/U Dataset,Dataset referensi SD curve LK/U (HCFA),v1.0.0,2025-03-15,0-60 bulan,true
+IMT_U,IMT/U Dataset,Dataset referensi SD curve IMT/U (BMIFA),v1.0.0,2025-03-15,0-60 bulan,true
+LILA_U,LiLA/U Dataset,Dataset referensi SD curve LiLA/U (ACFA),v1.0.0,2025-01-20,0-60 bulan,true
