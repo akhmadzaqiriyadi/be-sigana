@@ -1,8 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import prisma from "@/config/db";
-import { ReportFormat, ReportStatus } from "@prisma/client";
-import { NotFoundError } from "@/utils/ApiError";
+import { ReportFormat, ReportStatus, Role } from "@prisma/client";
+import { ForbiddenError, NotFoundError } from "@/utils/ApiError";
 import { logger } from "@/utils/logger";
 import { env } from "@/config/env";
 import * as XLSX from "xlsx";
@@ -156,16 +156,9 @@ async function fetchMeasurements(dto: GenerateReportDTO) {
     }
   }
 
-  // FaktorRisiko filters
-  if (dto.faktorRisiko?.sanitasi) {
-    where.sanitationData = { path: ["isSanitasiBuruk"], equals: true };
-  }
-  if (dto.faktorRisiko?.ksi) {
-    where.medicalHistoryData = { path: ["isKsiRendah"], equals: true };
-  }
-  if (dto.faktorRisiko?.lilaRisiko) {
-    where.lila = { lt: 11.5 };
-  }
+  // NOTE:
+  // faktorRisiko adalah konfigurasi konten/analisis laporan, bukan filter utama
+  // dataset. Jika dipakai sebagai filter AND, data sering tersaring habis.
 
   const measurements = await prisma.measurement.findMany({
     where,
@@ -367,6 +360,17 @@ function generatePdfBuffer(
 // ---------------------------------------------------------------------------
 
 export class ReportService {
+  private assertReadAccess(
+    generatedById: string,
+    userId: string,
+    role: Role
+  ): void {
+    if (role === Role.ADMIN) return;
+    if (generatedById !== userId) {
+      throw new ForbiddenError("Tidak memiliki akses ke laporan ini");
+    }
+  }
+
   /**
    * Create a Report record (PROCESSING) and kick off background generation.
    */
@@ -453,13 +457,14 @@ export class ReportService {
   /**
    * GET /reports/:id/status
    */
-  async getStatus(reportId: string, _userId: string) {
+  async getStatus(reportId: string, userId: string, role: Role) {
     const report = await prisma.report.findUnique({
       where: { id: reportId },
       include: { generatedBy: { select: { id: true, name: true } } },
     });
 
     if (!report) throw new NotFoundError("Laporan tidak ditemukan");
+    this.assertReadAccess(report.generatedById, userId, role);
 
     const statusLabel: Record<ReportStatus, string> = {
       PROCESSING: "processing",
@@ -481,7 +486,11 @@ export class ReportService {
   /**
    * GET /reports/:id/download — stream the file
    */
-  async getFilePath(reportId: string): Promise<{
+  async getFilePath(
+    reportId: string,
+    userId: string,
+    role: Role
+  ): Promise<{
     filePath: string;
     format: string;
     title: string;
@@ -491,6 +500,7 @@ export class ReportService {
     });
 
     if (!report) throw new NotFoundError("Laporan tidak ditemukan");
+    this.assertReadAccess(report.generatedById, userId, role);
     if (report.status === "PROCESSING") {
       throw new NotFoundError("Laporan masih dalam proses");
     }

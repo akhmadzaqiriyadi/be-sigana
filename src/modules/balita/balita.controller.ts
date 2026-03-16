@@ -45,6 +45,45 @@ export const getAllBalitas = asyncHandler(
   }
 );
 
+export const getBalitaSummary = asyncHandler(
+  async (req: Request, res: Response) => {
+    const villageId = req.query.villageId
+      ? parseInt(String(req.query.villageId))
+      : undefined;
+    const period = req.query.period ? String(req.query.period) : undefined;
+    const includeByVillageRaw = req.query.includeByVillage;
+
+    if (villageId !== undefined && Number.isNaN(villageId)) {
+      throw new BadRequestError("villageId harus berupa angka yang valid");
+    }
+
+    if (period && !["3_months", "6_months", "1_year"].includes(period)) {
+      throw new BadRequestError(
+        "period harus salah satu dari: 3_months, 6_months, 1_year"
+      );
+    }
+
+    let includeByVillage = true;
+    if (includeByVillageRaw !== undefined) {
+      const normalized = String(includeByVillageRaw).toLowerCase();
+      if (!["true", "false"].includes(normalized)) {
+        throw new BadRequestError(
+          "includeByVillage harus bernilai true atau false"
+        );
+      }
+      includeByVillage = normalized === "true";
+    }
+
+    const result = await balitaService.getSummary({
+      villageId,
+      period,
+      includeByVillage,
+    });
+
+    sendSuccess(res, "Ringkasan balita berhasil diambil", result);
+  }
+);
+
 export const getBalitaById = asyncHandler(
   async (req: Request, res: Response) => {
     const balita = await balitaService.findById(String(req.params.id));

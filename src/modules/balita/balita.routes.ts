@@ -1,6 +1,7 @@
 import { Router } from "express";
 import {
   getAllBalitas,
+  getBalitaSummary,
   getBalitaById,
   createBalita,
   updateBalita,
@@ -153,7 +154,12 @@ const router = Router();
 router.use(authenticate);
 
 // Relawan can read and create
-router.get("/", getAllBalitas);
+router.get("/", authorize("ADMIN", "RELAWAN"), getAllBalitas);
+router.get(
+  "/summary",
+  authorize("ADMIN", "STAKEHOLDER", "RELAWAN"),
+  getBalitaSummary
+);
 router.post(
   "/sync",
   authorize("RELAWAN", "ADMIN"),
@@ -161,7 +167,7 @@ router.post(
   syncBalitas
 );
 
-router.get("/:id", getBalitaById);
+router.get("/:id", authorize("ADMIN", "RELAWAN"), getBalitaById);
 router.post(
   "/",
   authorize("RELAWAN", "ADMIN"),

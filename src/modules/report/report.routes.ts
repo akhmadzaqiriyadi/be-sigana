@@ -5,7 +5,7 @@ import {
   downloadReport,
   getReportHistory,
 } from "./report.controller";
-import { authenticate } from "@/middlewares/auth";
+import { authenticate, authorize } from "@/middlewares/auth";
 
 const router = Router();
 
@@ -114,7 +114,7 @@ router.use(authenticate);
  *       401:
  *         description: Unauthorized
  */
-router.post("/generate", generateReport);
+router.post("/generate", authorize("ADMIN", "STAKEHOLDER"), generateReport);
 
 /**
  * @openapi

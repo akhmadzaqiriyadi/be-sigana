@@ -19,6 +19,177 @@ interface UpdateBalitaInput {
 }
 
 export class BalitaService {
+  private getDateRangeFromPeriod(
+    period?: string
+  ): { gte: Date; lte: Date } | null {
+    if (!period) return null;
+
+    const now = new Date();
+    let days: number;
+
+    if (period === "3_months") {
+      days = 90;
+    } else if (period === "6_months") {
+      days = 180;
+    } else if (period === "1_year") {
+      days = 365;
+    } else {
+      return null;
+    }
+
+    return {
+      gte: new Date(now.getTime() - days * 24 * 60 * 60 * 1000),
+      lte: now,
+    };
+  }
+
+  async getSummary(filters?: {
+    villageId?: number;
+    period?: string;
+    includeByVillage?: boolean;
+  }) {
+    const baseWhere: any = {};
+    if (filters?.villageId) {
+      baseWhere.villageId = filters.villageId;
+    }
+
+    const dateRange = this.getDateRangeFromPeriod(filters?.period);
+    const measurementBase: any = {};
+    if (dateRange) {
+      measurementBase.createdAt = dateRange;
+    }
+
+    const hasMeasurementFilter = Object.keys(measurementBase).length > 0;
+
+    const totalWhere = hasMeasurementFilter
+      ? {
+          ...baseWhere,
+          measurements: {
+            some: measurementBase,
+          },
+        }
+      : baseWhere;
+
+    const countWhere = (statusAkhir: string, additional: any = {}) => ({
+      ...baseWhere,
+      measurements: {
+        some: {
+          ...measurementBase,
+          statusAkhir,
+          ...additional,
+        },
+      },
+    });
+
+    const [totalTerdata, normal, warning, faltering, giziBuruk] =
+      await Promise.all([
+        prisma.balita.count({ where: totalWhere }),
+        prisma.balita.count({ where: countWhere("HIJAU") }),
+        prisma.balita.count({ where: countWhere("KUNING") }),
+        prisma.balita.count({
+          where: countWhere("MERAH", {
+            bb_tb_status: { not: { contains: "Buruk" } },
+          }),
+        }),
+        prisma.balita.count({
+          where: countWhere("MERAH", { bb_tb_status: { contains: "Buruk" } }),
+        }),
+      ]);
+
+    let byVillage: {
+      villageId: number;
+      namaVillage: string;
+      totalTerdata: number;
+      normal: number;
+      warning: number;
+      faltering: number;
+      giziBuruk: number;
+    }[] = [];
+
+    if (filters?.includeByVillage !== false) {
+      const villages = await prisma.village.findMany({
+        where: filters?.villageId ? { id: filters.villageId } : undefined,
+        select: {
+          id: true,
+          name: true,
+        },
+        orderBy: { name: "asc" },
+      });
+
+      byVillage = await Promise.all(
+        villages.map(async (village) => {
+          const villageWhere = { villageId: village.id };
+          const villageTotalWhere = hasMeasurementFilter
+            ? {
+                ...villageWhere,
+                measurements: {
+                  some: measurementBase,
+                },
+              }
+            : villageWhere;
+
+          const villageCountWhere = (
+            statusAkhir: string,
+            additional: any = {}
+          ) => ({
+            ...villageWhere,
+            measurements: {
+              some: {
+                ...measurementBase,
+                statusAkhir,
+                ...additional,
+              },
+            },
+          });
+
+          const [
+            villageTotalTerdata,
+            villageNormal,
+            villageWarning,
+            villageFaltering,
+            villageGiziBuruk,
+          ] = await Promise.all([
+            prisma.balita.count({ where: villageTotalWhere }),
+            prisma.balita.count({ where: villageCountWhere("HIJAU") }),
+            prisma.balita.count({ where: villageCountWhere("KUNING") }),
+            prisma.balita.count({
+              where: villageCountWhere("MERAH", {
+                bb_tb_status: { not: { contains: "Buruk" } },
+              }),
+            }),
+            prisma.balita.count({
+              where: villageCountWhere("MERAH", {
+                bb_tb_status: { contains: "Buruk" },
+              }),
+            }),
+          ]);
+
+          return {
+            villageId: village.id,
+            namaVillage: village.name,
+            totalTerdata: villageTotalTerdata,
+            normal: villageNormal,
+            warning: villageWarning,
+            faltering: villageFaltering,
+            giziBuruk: villageGiziBuruk,
+          };
+        })
+      );
+    }
+
+    return {
+      summary: {
+        totalTerdata,
+        normal,
+        warning,
+        faltering,
+        giziBuruk,
+      },
+      byVillage,
+      period: filters?.period ?? null,
+    };
+  }
+
   async findAll(
     page = 1,
     limit = 10,

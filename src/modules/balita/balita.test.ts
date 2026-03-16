@@ -15,6 +15,7 @@ mock.module("../../config/db", () => ({
     },
     village: {
       findUnique: mock(),
+      findMany: mock(),
     },
   },
 }));
@@ -115,6 +116,64 @@ describe("BalitaService", () => {
       expect(result.balitas).toHaveLength(1);
       expect(result.meta.total).toBe(1);
       expect(result.summary.totalTerdata).toBe(1);
+    });
+  });
+
+  describe("getSummary", () => {
+    it("should return summary and byVillage data", async () => {
+      (prisma.balita.count as any)
+        .mockResolvedValueOnce(10)
+        .mockResolvedValueOnce(6)
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(5)
+        .mockResolvedValueOnce(3)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(0);
+
+      (prisma.village.findMany as any).mockResolvedValue([
+        { id: 1, name: "Desa Maju" },
+      ]);
+
+      const result = await balitaService.getSummary({
+        period: "6_months",
+        includeByVillage: true,
+      });
+
+      expect(result.summary.totalTerdata).toBe(10);
+      expect(result.summary.normal).toBe(6);
+      expect(result.byVillage).toHaveLength(1);
+      expect(result.byVillage[0]).toEqual({
+        villageId: 1,
+        namaVillage: "Desa Maju",
+        totalTerdata: 5,
+        normal: 3,
+        warning: 1,
+        faltering: 1,
+        giziBuruk: 0,
+      });
+      expect(result.period).toBe("6_months");
+    });
+
+    it("should skip byVillage when includeByVillage is false", async () => {
+      (prisma.village.findMany as any).mockClear();
+
+      (prisma.balita.count as any)
+        .mockResolvedValueOnce(4)
+        .mockResolvedValueOnce(2)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(1)
+        .mockResolvedValueOnce(0);
+
+      const result = await balitaService.getSummary({
+        includeByVillage: false,
+      });
+
+      expect(result.summary.totalTerdata).toBe(4);
+      expect(result.byVillage).toHaveLength(0);
+      expect(prisma.village.findMany).not.toHaveBeenCalled();
     });
   });
 });

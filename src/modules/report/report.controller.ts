@@ -74,7 +74,11 @@ export const getReportStatus = asyncHandler(
   async (req: Request, res: Response) => {
     if (!req.user) throw new UnauthorizedError();
     const id = String(req.params.id);
-    const result = await reportService.getStatus(id, req.user.userId);
+    const result = await reportService.getStatus(
+      id,
+      req.user.userId,
+      req.user.role
+    );
     sendSuccess(res, "Status laporan berhasil diambil", result);
   }
 );
@@ -88,7 +92,11 @@ export const downloadReport = asyncHandler(
     if (!req.user) throw new UnauthorizedError();
     const id = String(req.params.id);
 
-    const { filePath, title } = await reportService.getFilePath(id);
+    const { filePath, title } = await reportService.getFilePath(
+      id,
+      req.user.userId,
+      req.user.role
+    );
 
     const mimeTypes: Record<string, string> = {
       pdf: "application/pdf",
