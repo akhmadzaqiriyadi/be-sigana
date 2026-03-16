@@ -109,6 +109,75 @@ export const updateWhoDatasetSchema = z.object({
     ),
 });
 
+const growthMeasureCsvSchema = z
+  .string()
+  .transform((value) =>
+    value
+      .split(",")
+      .map((item) => item.trim().toLowerCase())
+      .filter((item) => item.length > 0)
+  )
+  .refine(
+    (items) =>
+      items.every((item) =>
+        ["bb_u", "tb_u", "bb_tb", "lk_u", "lila_u", "imt_u"].includes(item)
+      ),
+    {
+      message:
+        "Query measures hanya boleh berisi bb_u,tb_u,bb_tb,lk_u,lila_u,imt_u",
+    }
+  );
+
+const growthSexCsvSchema = z
+  .string()
+  .transform((value) =>
+    value
+      .split(",")
+      .map((item) => item.trim().toUpperCase())
+      .filter((item) => item.length > 0)
+  )
+  .refine((items) => items.every((item) => ["L", "P"].includes(item)), {
+    message: "Query sex hanya boleh berisi L,P",
+  });
+
+export const growthDatasetsQuerySchema = z.object({
+  query: z.object({
+    measures: growthMeasureCsvSchema.optional(),
+    sex: growthSexCsvSchema.optional(),
+  }),
+});
+
+const classificationBandSchema = z.object({
+  label: z.string().min(1, "Label band wajib diisi"),
+  minInclusive: z.number().optional(),
+  minExclusive: z.number().optional(),
+  maxInclusive: z.number().optional(),
+  maxExclusive: z.number().optional(),
+});
+
+const classificationRuleSchema = z.object({
+  outlierAbs: z.number().int().positive("outlierAbs harus positif"),
+  bands: z
+    .array(classificationBandSchema)
+    .min(1, "Minimal 1 band per indikator"),
+});
+
+export const classificationRulesBodySchema = z.object({
+  bb_u: classificationRuleSchema.optional(),
+  tb_u: classificationRuleSchema.optional(),
+  bb_tb: classificationRuleSchema.optional(),
+  lk_u: classificationRuleSchema.optional(),
+  lila_u: classificationRuleSchema.optional(),
+  imt_u: classificationRuleSchema.optional(),
+});
+
+export const updateGrowthClassificationRulesSchema = z.object({
+  body: classificationRulesBodySchema.refine(
+    (body) => Object.values(body).some((v) => v !== undefined),
+    { message: "Minimal satu indikator harus diisi" }
+  ),
+});
+
 export const createBalitaSchema = z.object({
   body: z.object({
     namaAnak: z.string().min(1, "Nama anak wajib diisi"),

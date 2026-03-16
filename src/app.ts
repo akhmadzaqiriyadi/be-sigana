@@ -16,6 +16,7 @@ import reportRoutes from "./modules/report/report.routes";
 import kbmRoutes from "./modules/kbm/kbm.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
 import systemRoutes from "./modules/system/system.routes";
+import growthRoutes from "./modules/growth/growth.routes";
 import { openApiSpecification } from "./config/swagger";
 
 const app: Application = express();
@@ -127,6 +128,7 @@ app.use(`${API_PREFIX}/measurements`, measurementRoutes);
 app.use(`${API_PREFIX}/reports`, reportRoutes);
 app.use(`${API_PREFIX}/kbm`, kbmRoutes);
 app.use(`${API_PREFIX}/settings`, settingsRoutes);
+app.use(`${API_PREFIX}/growth`, growthRoutes);
 app.use(`${API_PREFIX}/system`, systemRoutes);
 
 // Error handling

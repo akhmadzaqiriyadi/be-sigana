@@ -4,6 +4,7 @@ import { authService } from "./auth.service";
 import { sendSuccess, sendCreated } from "@/utils/response";
 import { BadRequestError } from "@/utils/ApiError";
 import { env } from "@/config/env";
+import { growthService } from "@/modules/growth/growth.service";
 
 export const register = asyncHandler(async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
@@ -83,8 +84,15 @@ export const refresh = asyncHandler(async (req: Request, res: Response) => {
 
 export const getProfile = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
-  const user = await authService.getProfile(userId);
-  sendSuccess(res, "Profil berhasil diambil", user);
+  const [user, growthVersion] = await Promise.all([
+    authService.getProfile(userId),
+    growthService.getVersionInfo(),
+  ]);
+
+  sendSuccess(res, "Profil berhasil diambil", {
+    ...user,
+    growthConfigVersion: growthVersion.version,
+  });
 });
 
 export const logout = asyncHandler(async (req: Request, res: Response) => {
