@@ -22,8 +22,8 @@ JWT_EXPIRES_IN="1d"
 LOG_LEVEL=debug
 MORGAN_FORMAT=dev
 
-# CORS (Boleh beberapa origin dipisahkan koma)
-CORS_ORIGIN="http://localhost:3000,http://localhost:3001,http://localhost:3002"
+# CORS (Izinkan semua origin saat dev)
+CORS_ORIGIN="*"
 ```
 
 ---
