@@ -10,6 +10,7 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+ENV NODE_ENV=production
 RUN bunx prisma generate
 RUN bun run build
 
@@ -21,6 +22,8 @@ ENV NODE_ENV=production
 COPY package.json ./
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/src/config/datasets /config/datasets
+COPY --from=builder /app/src/config/datasets /app/dist/datasets
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/prisma.config.ts ./prisma.config.ts
 
