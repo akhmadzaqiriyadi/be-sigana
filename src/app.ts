@@ -1,5 +1,5 @@
 import express, { Application } from "express";
-import cors from "cors";
+import cors, { CorsOptions } from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import rateLimit from "express-rate-limit";
@@ -21,25 +21,59 @@ import { openApiSpecification } from "./config/swagger";
 
 const app: Application = express();
 
+const normalizeOrigin = (origin: string): string =>
+  origin.trim().replace(/\/+$/, "");
+
+const parseCorsOrigins = (origins: string): string[] =>
+  origins
+    .split(",")
+    .map(normalizeOrigin)
+    .filter(Boolean);
+
+const defaultDevOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+];
+
+const envOrigins = parseCorsOrigins(env.CORS_ORIGIN);
+const allowedOrigins = Array.from(
+  new Set(
+    env.NODE_ENV === "development"
+      ? [...defaultDevOrigins, ...envOrigins]
+      : envOrigins.length > 0
+        ? envOrigins
+        : defaultDevOrigins
+  )
+);
+
+const corsOptions: CorsOptions = {
+  origin: (requestOrigin, callback) => {
+    // Allow server-to-server calls (curl, Postman, cronjobs) with no Origin header
+    if (!requestOrigin) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes("*")) {
+      return callback(null, true);
+    }
+
+    if (allowedOrigins.includes(normalizeOrigin(requestOrigin))) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Origin ${requestOrigin} is not allowed by CORS`));
+  },
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
+  exposedHeaders: ["Set-Cookie"],
+};
+
 // Middleware
 app.set("trust proxy", 1); // Trust first proxy
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(
-  cors({
-    origin:
-      env.NODE_ENV === "development"
-        ? [
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "http://localhost:3002",
-          ]
-        : env.FRONTEND_URL || "http://localhost:3000",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "Cookie"],
-    exposedHeaders: ["Set-Cookie"],
-  })
-);
+app.use(cors(corsOptions));
 // Compression disabled - Bun doesn't fully support zlib.createBrotliCompress yet
 // app.use(compression({
 //   filter: (req, res) => {
