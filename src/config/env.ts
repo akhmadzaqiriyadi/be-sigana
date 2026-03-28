@@ -1,6 +1,12 @@
 import { config } from "dotenv";
 config();
 
+const defaultCorsOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+  "http://localhost:3002",
+].join(",");
+
 export const env = {
   PORT: process.env.PORT || 3000,
   NODE_ENV: process.env.NODE_ENV || "development",
@@ -10,6 +16,8 @@ export const env = {
   JWT_REFRESH_SECRET:
     process.env.JWT_REFRESH_SECRET || "refresh-fallback-secret",
   JWT_REFRESH_EXPIRES_IN: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+  CORS_ORIGIN:
+    process.env.CORS_ORIGIN || process.env.FRONTEND_URL || defaultCorsOrigins,
   FRONTEND_URL: process.env.FRONTEND_URL || "http://localhost:3000",
   SMTP_HOST: process.env.SMTP_HOST || "smtp.resend.com",
   SMTP_PORT: parseInt(process.env.SMTP_PORT || "465"),
