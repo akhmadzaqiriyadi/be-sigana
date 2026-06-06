@@ -178,4 +178,7 @@ reports_storage/
 # Finder (MacOS) folder config
 .DS_Store
 
+# Code review graph output (auto-generated, contains absolute paths)
+.code-review-graph/
+
 /generated/prisma

@@ -69,6 +69,11 @@ export const SanitationQuestionnaireSchemaV1 = z.object({
 });
 
 // Schema for Medical History Questionnaire
+// V2 Schema for Sanitation (dual-format support)
+export const SanitationQuestionnaireSchemaV2 = z.object({
+  conditions: z.array(z.string()),
+});
+
 export const MedicalHistoryQuestionnaireSchemaV1 = z.object({
   version: z.literal(1).optional().default(1),
   answers: z
@@ -86,12 +91,17 @@ export const MedicalHistoryQuestionnaireSchemaV1 = z.object({
 
 export const validateQuestionnaireResponse = (
   type: "sanitation" | "medicalHistory",
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  data: any
+  data: Record<string, unknown>
 ) => {
   if (!data) return null;
 
-  // Handle versioning logic here if multiple versions exist in future
+  // Dual-format support: if data has `conditions` → V2; if `version` + `answers` → V1
+  if (data.conditions) {
+    if (type === "sanitation") {
+      return SanitationQuestionnaireSchemaV2.safeParse(data);
+    }
+  }
+
   const version = data.version || 1;
 
   if (version === 1) {

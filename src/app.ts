@@ -92,6 +92,15 @@ const limiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Maks 20 request auth per 15 menit (brute force protection)
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { success: false, message: 'Terlalu banyak percobaan. Coba lagi nanti.' },
+});
+
 app.use(limiter);
 
 const morganFormat =
@@ -154,7 +163,7 @@ app.get("/docs", (_req, res) => {
   `);
 });
 
-app.use(`${API_PREFIX}/auth`, authRoutes);
+app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/villages`, villageRoutes);
 app.use(`${API_PREFIX}/balitas`, balitaRoutes);

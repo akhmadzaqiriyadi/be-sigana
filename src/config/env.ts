@@ -1,5 +1,6 @@
 import { config } from "dotenv";
-config();
+config(); // loads .env (production defaults)
+config({ path: ".env.local", override: true }); // .env.local overrides for local dev
 
 const defaultCorsOrigins = [
   "http://localhost:3000",

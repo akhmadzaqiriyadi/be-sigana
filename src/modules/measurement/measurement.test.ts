@@ -6,10 +6,25 @@ import {
 import prisma from "@/config/db";
 import { Posisi } from "@prisma/client";
 
+// Mock Z-score calculator to avoid WHO data dependency
+mock.module("../../utils/zscore/calculator", () => ({
+  calculateAnthropometry: () => ({
+    bb_u_status: "normal",
+    tb_u_status: "normal",
+    bb_tb_status: "normal",
+    lk_u_status: "normal",
+    lila_u_status: "normal",
+    imt_u_status: "normal",
+    statusAkhir: "HIJAU",
+    zScores: { bb_u: 0, tb_u: 0, bb_tb: 0, lk_u: 0, lila_u: 0, imt_u: 0 },
+  }),
+}));
+
 // Mock prisma and Standards
 mock.module("../../config/db", () => ({
   default: {
     measurement: {
+      findUnique: mock(),
       findMany: mock(),
       count: mock(),
       findFirst: mock(),
@@ -176,6 +191,200 @@ describe("MeasurementService", () => {
       expect(callArgs.where.balitaId).toBe("balita-1");
       expect(callArgs.where.updatedAt).toEqual({ gt: updatedDate });
       expect(callArgs.where.createdAt).toEqual({ gt: createdDate });
+    });
+  });
+
+  describe("create with V2 payload", () => {
+    it("should store V2 imunisasiData, klinikData, giziData, sanitasiData", async () => {
+      (prisma.balita.findUnique as any).mockResolvedValue(mockBalita);
+      (prisma.measurement.count as any).mockResolvedValue(0);
+      (prisma.measurement.create as any).mockResolvedValue({
+        id: "meas-1",
+        balitaId: "balita-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        imunisasiData: { vaksin: "BCG", catatan: "lengkap" },
+        klinikData: {
+          tandaVital: { suhuTubuh: "36.5", frekuensiNapas: "30" },
+          pemeriksaanFisik: {
+            kulit: { status: "normal", keterangan: "bersih" },
+            mata: { status: "normal", keterangan: "jernih" },
+            telinga: { status: "normal", keterangan: "bersih" },
+            jantung: { status: "normal", keterangan: "teratur" },
+            paru: { status: "normal", keterangan: "vesikuler" },
+          },
+          skriningBahaya: {
+            demamTinggi: { status: "tidak", keterangan: "tidak ada" },
+            sesakNapas: { status: "tidak", keterangan: "tidak ada" },
+            diareBerat: { status: "tidak", keterangan: "tidak ada" },
+            kondisiLainnya: { status: "tidak", keterangan: "tidak ada" },
+          },
+          tandaDefisiensi: [],
+        },
+        giziData: {
+          riwayatPemberian: {
+            asiEksklusif: "ASI_EKSKLUSIF",
+            lamaAsiBulan: "6",
+            usiaMulaiMpasi: "6",
+          },
+          frekuensiMakanan: {
+            makanUtama: "3",
+            makananSelingan: "2",
+            makanTeratur: "YA",
+            masihAsi: "TIDAK",
+            tidakMakanSaatSakit: "TIDAK",
+          },
+          kualitasMakanan: {
+            sayur: "Ya",
+            buah: "Ya",
+            proteinHewani: "Ya",
+            proteinNabati: "Ya",
+            makananPokok: "Ya",
+            lemak: "Ya",
+          },
+        },
+        sanitationData: { conditions: ["ventilasi", "air_bersih"] },
+      });
+
+      const _result = await measurementService.create({
+        balitaId: "balita-1",
+        relawanId: "relawan-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        lingkarKepala: 45,
+        lila: 15,
+        posisiUkur: Posisi.TERLENTANG,
+        imunisasiData: { vaksin: "BCG", catatan: "lengkap" },
+        klinikData: {
+          tandaVital: { suhuTubuh: "36.5", frekuensiNapas: "30" },
+          pemeriksaanFisik: {
+            kulit: { status: "normal", keterangan: "bersih" },
+            mata: { status: "normal", keterangan: "jernih" },
+            telinga: { status: "normal", keterangan: "bersih" },
+            jantung: { status: "normal", keterangan: "teratur" },
+            paru: { status: "normal", keterangan: "vesikuler" },
+          },
+          skriningBahaya: {
+            demamTinggi: { status: "tidak", keterangan: "tidak ada" },
+            sesakNapas: { status: "tidak", keterangan: "tidak ada" },
+            diareBerat: { status: "tidak", keterangan: "tidak ada" },
+            kondisiLainnya: { status: "tidak", keterangan: "tidak ada" },
+          },
+          tandaDefisiensi: [],
+        },
+        giziData: {
+          riwayatPemberian: {
+            asiEksklusif: "ASI_EKSKLUSIF",
+            lamaAsiBulan: "6",
+            usiaMulaiMpasi: "6",
+          },
+          frekuensiMakanan: {
+            makanUtama: "3",
+            makananSelingan: "2",
+            makanTeratur: "YA",
+            masihAsi: "TIDAK",
+            tidakMakanSaatSakit: "TIDAK",
+          },
+          kualitasMakanan: {
+            sayur: "Ya",
+            buah: "Ya",
+            proteinHewani: "Ya",
+            proteinNabati: "Ya",
+            makananPokok: "Ya",
+            lemak: "Ya",
+          },
+        },
+        sanitationData: { conditions: ["ventilasi", "air_bersih"] },
+      });
+
+      const createCall = (prisma.measurement.create as any).mock.lastCall[0];
+      expect(createCall.data.imunisasiData).toEqual({
+        vaksin: "BCG",
+        catatan: "lengkap",
+      });
+      expect(createCall.data.klinikData.tandaVital.suhuTubuh).toBe("36.5");
+      expect(createCall.data.giziData.riwayatPemberian.asiEksklusif).toBe(
+        "ASI_EKSKLUSIF"
+      );
+      expect(createCall.data.sanitationData).toEqual({
+        conditions: ["ventilasi", "air_bersih"],
+      });
+    });
+  });
+
+  describe("findById with V2 fields", () => {
+    const mockCurrentMeasurement = {
+      id: "meas-2",
+      balitaId: "balita-1",
+      relawanId: "relawan-1",
+      beratBadan: 12,
+      tinggiBadan: 80,
+      lingkarKepala: 46,
+      lila: 16,
+      posisiUkur: Posisi.TERLENTANG,
+      bb_u_status: "normal",
+      tb_u_status: "normal",
+      bb_tb_status: "normal",
+      statusAkhir: "HIJAU" as const,
+      balita: {
+        id: "balita-1",
+        namaAnak: "Ani",
+        namaOrtu: "Budi",
+        tanggalLahir: new Date(new Date().setMonth(new Date().getMonth() - 12)),
+        jenisKelamin: "P",
+        village: { id: 1, name: "Desa A", districts: "Kec A" },
+      },
+      relawan: { id: "relawan-1", name: "Rini", email: "rini@test.com" },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    it("should return deltaBB when previous measurement exists", async () => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(
+        mockCurrentMeasurement
+      );
+      (prisma.measurement.findFirst as any).mockResolvedValue({
+        beratBadan: 10,
+        createdAt: new Date(),
+      });
+      (prisma.measurement.findMany as any).mockResolvedValue([
+        { beratBadan: 10, tinggiBadan: 75, createdAt: new Date() },
+        { beratBadan: 12, tinggiBadan: 80, createdAt: new Date() },
+      ]);
+
+      const result = await measurementService.findById("meas-2");
+      expect(result.deltaBB).toBe(2);
+    });
+
+    it("should return null deltaBB when no previous measurement", async () => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(
+        mockCurrentMeasurement
+      );
+      (prisma.measurement.findFirst as any).mockResolvedValue(null);
+      (prisma.measurement.findMany as any).mockResolvedValue([
+        { beratBadan: 12, tinggiBadan: 80, createdAt: new Date() },
+      ]);
+
+      const result = await measurementService.findById("meas-2");
+      expect(result.deltaBB).toBeNull();
+    });
+
+    it("should return growthHistory array", async () => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(
+        mockCurrentMeasurement
+      );
+      (prisma.measurement.findFirst as any).mockResolvedValue(null);
+      (prisma.measurement.findMany as any).mockResolvedValue([
+        { beratBadan: 10, tinggiBadan: 75, createdAt: new Date() },
+        { beratBadan: 12, tinggiBadan: 80, createdAt: new Date() },
+      ]);
+
+      const result = await measurementService.findById("meas-2");
+      expect(Array.isArray(result.growthHistory)).toBe(true);
+      expect(result.growthHistory.length).toBe(2);
+      expect(result.growthHistory[0]).toHaveProperty("age");
+      expect(result.growthHistory[0]).toHaveProperty("weight");
+      expect(result.growthHistory[0]).toHaveProperty("height");
     });
   });
 

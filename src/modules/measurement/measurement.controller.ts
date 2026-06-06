@@ -8,6 +8,11 @@ import { sendSuccess, sendCreated } from "@/utils/response";
 import { BadRequestError } from "@/utils/ApiError";
 import { Posisi } from "@prisma/client";
 import { validateQuestionnaireResponse } from "@/constants/questionnaires";
+import {
+  imunisasiSchema,
+  clinicalExaminationSchema,
+  nutritionalStatusSchema,
+} from "@/validations/measurement.validation";
 
 export const getAllMeasurements = asyncHandler(
   async (req: Request, res: Response) => {
@@ -80,6 +85,9 @@ export const createMeasurement = asyncHandler(
       notes,
       sanitationData,
       medicalHistoryData,
+      imunisasiData,
+      klinikData,
+      giziData,
     } = req.body;
 
     if (
@@ -136,6 +144,9 @@ export const createMeasurement = asyncHandler(
       notes,
       sanitationData,
       medicalHistoryData,
+      imunisasiData,
+      klinikData,
+      giziData,
     });
 
     sendCreated(res, "Data pengukuran berhasil dibuat", measurement);
@@ -171,6 +182,30 @@ export const syncMeasurements = asyncHandler(
         if (!validation?.success) {
           throw new BadRequestError(
             `Sync Failed: Format Data Riwayat Kesehatan Invalid for localId ${m.localId}`
+          );
+        }
+      }
+      if (m.imunisasiData) {
+        const validation = imunisasiSchema.safeParse(m.imunisasiData);
+        if (!validation.success) {
+          throw new BadRequestError(
+            `Sync Failed: Format Data Imunisasi Invalid for localId ${m.localId}`
+          );
+        }
+      }
+      if (m.klinikData) {
+        const validation = clinicalExaminationSchema.safeParse(m.klinikData);
+        if (!validation.success) {
+          throw new BadRequestError(
+            `Sync Failed: Format Data Klinik Invalid for localId ${m.localId}`
+          );
+        }
+      }
+      if (m.giziData) {
+        const validation = nutritionalStatusSchema.safeParse(m.giziData);
+        if (!validation.success) {
+          throw new BadRequestError(
+            `Sync Failed: Format Data Gizi Invalid for localId ${m.localId}`
           );
         }
       }
@@ -227,9 +262,53 @@ export const deleteMeasurement = asyncHandler(
 
 export const updateMeasurement = asyncHandler(
   async (req: Request, res: Response) => {
+    const {
+      imunisasiData,
+      klinikData,
+      giziData,
+      sanitationData,
+      ...rest
+    } = req.body;
+
+    if (sanitationData) {
+      const validation = validateQuestionnaireResponse("sanitation", sanitationData);
+      if (!validation?.success) {
+        throw new BadRequestError(
+          `Format Data Sanitasi Invalid: ${validation?.error}`
+        );
+      }
+    }
+
+    if (imunisasiData) {
+      const validation = imunisasiSchema.safeParse(imunisasiData);
+      if (!validation.success) {
+        throw new BadRequestError("Format Data Imunisasi Invalid");
+      }
+    }
+
+    if (klinikData) {
+      const validation = clinicalExaminationSchema.safeParse(klinikData);
+      if (!validation.success) {
+        throw new BadRequestError("Format Data Klinik Invalid");
+      }
+    }
+
+    if (giziData) {
+      const validation = nutritionalStatusSchema.safeParse(giziData);
+      if (!validation.success) {
+        throw new BadRequestError("Format Data Gizi Invalid");
+      }
+    }
+
     const measurement = await measurementService.update(
       String(req.params.id),
-      req.body
+      {
+        ...rest,
+        imunisasiData,
+        klinikData,
+        giziData,
+        sanitationData,
+      }
     );
     sendSuccess(res, "Data pengukuran berhasil diperbarui", measurement);
   }

@@ -141,6 +141,11 @@ model Measurement {
   sanitationData     Json?
   medicalHistoryData Json?
 
+  // V2 Questionnaire Data
+  imunisasiData      Json?
+  klinikData         Json?
+  giziData           Json?
+
   // Output Z-Score (Permenkes 2/2020)
   bb_u_status   String
   tb_u_status   String
@@ -157,6 +162,12 @@ model Measurement {
 
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+
+  @@index([balitaId])
+  @@index([relawanId])
+  @@index([statusAkhir])
+  @@index([createdAt])
+  @@index([deletedAt])
 
   @@map("measurements")
 }

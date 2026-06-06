@@ -18,10 +18,12 @@ interface CreateMeasurementInput {
   localId?: string;
   isSynced?: boolean;
   notes?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  sanitationData?: any;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  medicalHistoryData?: any;
+  sanitationData?: Record<string, unknown>;
+  medicalHistoryData?: Record<string, unknown>;
+  // V2 Questionnaire Data
+  imunisasiData?: Record<string, unknown>;
+  klinikData?: Record<string, unknown>;
+  giziData?: Record<string, unknown>;
   // Optional pre-calculated statuses from frontend (Offline First)
   bb_u_status?: string;
   tb_u_status?: string;
@@ -231,7 +233,48 @@ export class MeasurementService {
       throw new NotFoundError("Data pengukuran tidak ditemukan");
     }
 
-    return measurement;
+    // Compute deltaBB: find previous measurement for same balita
+    const previousMeasurement = await prisma.measurement.findFirst({
+      where: {
+        balitaId: measurement.balitaId,
+        id: { not: measurement.id },
+        deletedAt: null,
+      },
+      orderBy: { createdAt: "desc" },
+      select: { beratBadan: true, createdAt: true },
+    });
+
+    const deltaBB = previousMeasurement
+      ? Number.parseFloat(
+          (measurement.beratBadan - previousMeasurement.beratBadan).toFixed(2)
+        )
+      : null;
+
+    // Fetch growthHistory: all measurements for same balita
+    const allMeasurements = await prisma.measurement.findMany({
+      where: { balitaId: measurement.balitaId, deletedAt: null },
+      orderBy: { createdAt: "asc" },
+      take: 20,
+      select: { beratBadan: true, tinggiBadan: true, createdAt: true },
+    });
+
+    const growthHistory = allMeasurements.map((m) => {
+      const ageInMonths = this.calculateAgeInMonths(
+        measurement.balita.tanggalLahir,
+        m.createdAt
+      );
+      return {
+        age: ageInMonths,
+        weight: m.beratBadan,
+        height: m.tinggiBadan,
+      };
+    });
+
+    return {
+      ...measurement,
+      deltaBB,
+      growthHistory,
+    };
   }
 
   async create(data: CreateMeasurementInput) {
@@ -490,6 +533,9 @@ export class MeasurementService {
         notes: true,
         sanitationData: true,
         medicalHistoryData: true,
+        imunisasiData: true,
+        klinikData: true,
+        giziData: true,
       },
     });
   }
@@ -574,6 +620,7 @@ export class MeasurementService {
       prisma.measurement.count({ where: lastMonthWhere }),
       prisma.measurement.findMany({
         where: periodWhere,
+        take: 5000,
         select: { createdAt: true, statusAkhir: true },
       }),
       prisma.measurement.findMany({
@@ -619,6 +666,20 @@ export class MeasurementService {
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
       const monthName = d.toLocaleString("id-ID", { month: "short" });
       trendMap.set(key, { month: monthName, HIJAU: 0, KUNING: 0, MERAH: 0 });
+    }
+
+    if (periodData.length === 0) {
+      return {
+        total,
+        totalChildrenChecked: uniqueChildren.length,
+        totalSynced,
+        statusCounts,
+        recentMeasurements,
+        momPercentage,
+        trend: Array.from(trendMap.values()),
+        topRiskVillages: [],
+        insights,
+      };
     }
 
     periodData.forEach((m) => {
@@ -889,8 +950,8 @@ export class MeasurementService {
     };
   }
 
-  private calculateAgeInMonths(birthDate: Date): number {
-    const today = new Date();
+  private calculateAgeInMonths(birthDate: Date, referenceDate?: Date): number {
+    const today = referenceDate || new Date();
     const birth = new Date(birthDate);
     let months = (today.getFullYear() - birth.getFullYear()) * 12;
     months -= birth.getMonth();
