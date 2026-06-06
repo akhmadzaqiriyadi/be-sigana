@@ -73,7 +73,23 @@ const corsOptions: CorsOptions = {
 
 // Middleware
 app.set("trust proxy", 1); // Trust first proxy
-app.use(helmet({ contentSecurityPolicy: false }));
+// CSP: strict untuk XSS protection, Scalar CDN diizinkan untuk docs
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "https://cdn.jsdelivr.net/npm/@scalar"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        frameAncestors: ["'none'"],
+      },
+    },
+  })
+);
 app.use(cors(corsOptions));
 // Compression disabled - Bun doesn't fully support zlib.createBrotliCompress yet
 // app.use(compression({
@@ -105,6 +121,18 @@ const authLimiter = rateLimit({
   },
 });
 
+// Rate limit for data-heavy endpoints (GET list/export endpoints)
+const dataLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 menit
+  max: 60, // max 60 request per menit
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    message: "Terlalu banyak permintaan. Coba lagi nanti.",
+  },
+});
+
 app.use(limiter);
 
 const morganFormat =
@@ -120,8 +148,8 @@ app.use(
   })
 );
 app.use(cookieParser());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1mb" })); // Prevent oversized payloads
+app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // Health check
 app.get("/health", (_req, res) => {
@@ -171,8 +199,8 @@ app.use(`${API_PREFIX}/auth`, authLimiter, authRoutes);
 app.use(`${API_PREFIX}/users`, userRoutes);
 app.use(`${API_PREFIX}/villages`, villageRoutes);
 app.use(`${API_PREFIX}/balitas`, balitaRoutes);
-app.use(`${API_PREFIX}/measurements`, measurementRoutes);
-app.use(`${API_PREFIX}/reports`, reportRoutes);
+app.use(`${API_PREFIX}/measurements`, dataLimiter, measurementRoutes);
+app.use(`${API_PREFIX}/reports`, dataLimiter, reportRoutes);
 app.use(`${API_PREFIX}/kbm`, kbmRoutes);
 app.use(`${API_PREFIX}/settings`, settingsRoutes);
 app.use(`${API_PREFIX}/growth`, growthRoutes);

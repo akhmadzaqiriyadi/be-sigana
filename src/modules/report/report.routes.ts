@@ -143,7 +143,7 @@ router.post("/generate", authorize("ADMIN", "STAKEHOLDER"), generateReport);
  *       401:
  *         description: Unauthorized
  */
-router.get("/history", getReportHistory);
+router.get("/history", authorize("ADMIN", "STAKEHOLDER"), getReportHistory);
 
 /**
  * @openapi
@@ -188,7 +188,7 @@ router.get("/history", getReportHistory);
  *       404:
  *         description: Laporan tidak ditemukan
  */
-router.get("/:id/status", getReportStatus);
+router.get("/:id/status", authorize("ADMIN", "STAKEHOLDER"), getReportStatus);
 
 /**
  * @openapi
@@ -225,6 +225,6 @@ router.get("/:id/status", getReportStatus);
  *       404:
  *         description: Laporan tidak ditemukan atau belum selesai
  */
-router.get("/:id/download", downloadReport);
+router.get("/:id/download", authorize("ADMIN", "STAKEHOLDER"), downloadReport);
 
 export default router;

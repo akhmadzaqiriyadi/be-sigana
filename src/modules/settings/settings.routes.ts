@@ -38,7 +38,7 @@ router.put(
   updateAccessConfig
 );
 
-router.get("/who-datasets", getWhoDatasets);
+router.get("/who-datasets", authorize("ADMIN", "STAKEHOLDER"), getWhoDatasets);
 router.get("/bootstrap-status", authorize("ADMIN"), getBootstrapStatus);
 router.put(
   "/who-datasets/:id",

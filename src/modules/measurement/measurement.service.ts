@@ -212,7 +212,7 @@ export class MeasurementService {
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string, currentUser?: { role: string; userId: string }) {
     const measurement = await prisma.measurement.findUnique({
       where: { id },
       include: {
@@ -233,6 +233,14 @@ export class MeasurementService {
 
     if (!measurement) {
       throw new NotFoundError("Data pengukuran tidak ditemukan");
+    }
+
+    // RBAC: RELAWAN hanya bisa lihat data miliknya
+    if (
+      currentUser?.role === "RELAWAN" &&
+      measurement.relawanId !== currentUser.userId
+    ) {
+      throw new ForbiddenError("Anda tidak memiliki akses ke data ini");
     }
 
     // Compute deltaBB: find previous measurement for same balita
@@ -629,7 +637,7 @@ export class MeasurementService {
         include: {
           balita: {
             select: {
-              namaAnak: true,
+              id: true,
               village: { select: { name: true } },
             },
           },

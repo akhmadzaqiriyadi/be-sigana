@@ -3,7 +3,12 @@ import { z } from "zod";
 export const registerSchema = z.object({
   body: z.object({
     email: z.string().email("Email tidak valid"),
-    password: z.string().min(6, "Password minimal 6 karakter"),
+    password: z
+      .string()
+      .min(8, "Password minimal 8 karakter")
+      .regex(/[A-Z]/, "Password harus mengandung huruf kapital")
+      .regex(/[a-z]/, "Password harus mengandung huruf kecil")
+      .regex(/[0-9]/, "Password harus mengandung angka"),
     name: z.string().min(3, "Nama minimal 3 karakter"),
   }),
 });
@@ -24,7 +29,12 @@ export const forgotPasswordSchema = z.object({
 export const resetPasswordSchema = z.object({
   body: z.object({
     token: z.string().min(1, "Token diperlukan"),
-    password: z.string().min(8, "Password minimal 8 karakter"),
+    password: z
+      .string()
+      .min(8, "Password minimal 8 karakter")
+      .regex(/[A-Z]/, "Password harus mengandung huruf kapital")
+      .regex(/[a-z]/, "Password harus mengandung huruf kecil")
+      .regex(/[0-9]/, "Password harus mengandung angka"),
   }),
 });
 
@@ -37,7 +47,12 @@ export const updateProfileSchema = z.object({
 export const createUserSchema = z.object({
   body: z.object({
     email: z.string().email("Email tidak valid"),
-    password: z.string().min(6, "Password minimal 6 karakter"),
+    password: z
+      .string()
+      .min(8, "Password minimal 8 karakter")
+      .regex(/[A-Z]/, "Password harus mengandung huruf kapital")
+      .regex(/[a-z]/, "Password harus mengandung huruf kecil")
+      .regex(/[0-9]/, "Password harus mengandung angka"),
     name: z.string().min(3, "Nama minimal 3 karakter"),
     role: z.enum(["ADMIN", "RELAWAN", "STAKEHOLDER"]).optional(),
     isVerified: z.boolean().optional(),

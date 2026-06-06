@@ -66,7 +66,8 @@ export const getAllMeasurements = asyncHandler(
 export const getMeasurementById = asyncHandler(
   async (req: Request, res: Response) => {
     const measurement = await measurementService.findById(
-      String(req.params.id)
+      String(req.params.id),
+      req.user as { role: string; userId: string }
     );
     sendSuccess(res, "Data pengukuran berhasil diambil", measurement);
   }
@@ -262,16 +263,14 @@ export const deleteMeasurement = asyncHandler(
 
 export const updateMeasurement = asyncHandler(
   async (req: Request, res: Response) => {
-    const {
-      imunisasiData,
-      klinikData,
-      giziData,
-      sanitationData,
-      ...rest
-    } = req.body;
+    const { imunisasiData, klinikData, giziData, sanitationData, ...rest } =
+      req.body;
 
     if (sanitationData) {
-      const validation = validateQuestionnaireResponse("sanitation", sanitationData);
+      const validation = validateQuestionnaireResponse(
+        "sanitation",
+        sanitationData
+      );
       if (!validation?.success) {
         throw new BadRequestError(
           `Format Data Sanitasi Invalid: ${validation?.error}`
@@ -300,16 +299,13 @@ export const updateMeasurement = asyncHandler(
       }
     }
 
-    const measurement = await measurementService.update(
-      String(req.params.id),
-      {
-        ...rest,
-        imunisasiData,
-        klinikData,
-        giziData,
-        sanitationData,
-      }
-    );
+    const measurement = await measurementService.update(String(req.params.id), {
+      ...rest,
+      imunisasiData,
+      klinikData,
+      giziData,
+      sanitationData,
+    });
     sendSuccess(res, "Data pengukuran berhasil diperbarui", measurement);
   }
 );
