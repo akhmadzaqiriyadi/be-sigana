@@ -6,6 +6,8 @@ import {
   AnthropometryResult,
 } from "@/utils/zscore/calculator";
 import { settingsService } from "@/modules/settings/settings.service";
+import { notificationService } from "../notification/notification.service";
+import { logger } from "@/utils/logger";
 
 interface CreateMeasurementInput {
   balitaId: string;
@@ -314,7 +316,7 @@ export class MeasurementService {
       thresholdConfig.minDataPoints
     ) as Status;
 
-    return prisma.measurement.create({
+    const measurement = await prisma.measurement.create({
       data: {
         ...data,
         // Overwrite any frontend-provided status with backend calculation
@@ -342,6 +344,31 @@ export class MeasurementService {
         },
       },
     });
+
+    // Push notification
+    try {
+      if (measurement.statusAkhir !== "HIJAU") {
+        const isCritical = measurement.statusAkhir === "MERAH";
+        const anakName = measurement.balita.namaAnak || "Anak";
+        notificationService.sendToUser(data.relawanId, {
+          title: isCritical
+            ? "Perlu Rujukan — " + anakName
+            : "Perlu Pemantauan — " + anakName,
+          body: isCritical
+            ? "Status MERAH: BB=" +
+              data.beratBadan +
+              " kg. Segera rujuk ke fasilitas kesehatan."
+            : "Status KUNING. Jadwalkan tindak lanjut untuk " + anakName + ".",
+          tag: isCritical ? "referral-required" : "follow-up-required",
+          data: { measurementId: measurement.id, balitaId: data.balitaId },
+          requireInteraction: isCritical,
+        });
+      }
+    } catch (pushErr) {
+      logger.error({ err: pushErr }, "Push notification failed (non-fatal)");
+    }
+
+    return measurement;
   }
 
   async update(id: string, data: Partial<CreateMeasurementInput>) {

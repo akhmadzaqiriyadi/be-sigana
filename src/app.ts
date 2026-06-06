@@ -17,6 +17,8 @@ import kbmRoutes from "./modules/kbm/kbm.routes";
 import settingsRoutes from "./modules/settings/settings.routes";
 import systemRoutes from "./modules/system/system.routes";
 import growthRoutes from "./modules/growth/growth.routes";
+import notificationRoutes from "./modules/notification/notification.routes";
+import { scheduleDailyReminder } from "./modules/notification/notification.cron";
 import { openApiSpecification } from "./config/swagger";
 
 const app: Application = express();
@@ -25,10 +27,7 @@ const normalizeOrigin = (origin: string): string =>
   origin.trim().replace(/\/+$/, "");
 
 const parseCorsOrigins = (origins: string): string[] =>
-  origins
-    .split(",")
-    .map(normalizeOrigin)
-    .filter(Boolean);
+  origins.split(",").map(normalizeOrigin).filter(Boolean);
 
 const defaultDevOrigins = [
   "http://localhost:3000",
@@ -62,7 +61,9 @@ const corsOptions: CorsOptions = {
       return callback(null, true);
     }
 
-    return callback(new Error(`Origin ${requestOrigin} is not allowed by CORS`));
+    return callback(
+      new Error(`Origin ${requestOrigin} is not allowed by CORS`)
+    );
   },
   credentials: true,
   methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
@@ -98,7 +99,10 @@ const authLimiter = rateLimit({
   max: 20, // Maks 20 request auth per 15 menit (brute force protection)
   standardHeaders: true,
   legacyHeaders: false,
-  message: { success: false, message: 'Terlalu banyak percobaan. Coba lagi nanti.' },
+  message: {
+    success: false,
+    message: "Terlalu banyak percobaan. Coba lagi nanti.",
+  },
 });
 
 app.use(limiter);
@@ -173,6 +177,11 @@ app.use(`${API_PREFIX}/kbm`, kbmRoutes);
 app.use(`${API_PREFIX}/settings`, settingsRoutes);
 app.use(`${API_PREFIX}/growth`, growthRoutes);
 app.use(`${API_PREFIX}/system`, systemRoutes);
+app.use(`${API_PREFIX}/notifications`, notificationRoutes);
+
+if (env.NODE_ENV !== "test") {
+  scheduleDailyReminder();
+}
 
 // Error handling
 app.use(notFoundHandler);
