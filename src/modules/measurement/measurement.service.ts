@@ -26,6 +26,10 @@ interface CreateMeasurementInput {
   imunisasiData?: Record<string, unknown>;
   klinikData?: Record<string, unknown>;
   giziData?: Record<string, unknown>;
+  // PRD v1.4
+  isDisasterArea?: boolean;
+  tinggiBadanOrtu?: number;
+  informedConsent?: boolean;
   // Optional pre-calculated statuses from frontend (Offline First)
   bb_u_status?: string;
   tb_u_status?: string;
@@ -324,10 +328,32 @@ export class MeasurementService {
       thresholdConfig.minDataPoints
     ) as Status;
 
+    // PRD v1.4 — Logika Trigger Rekomendasi Hb (1.2)
+    // Direkomendasikan jika anak terindikasi Stunting (Sangat Pendek) atau Gizi Buruk
+    const needsHbRecommendation =
+      statusAkhir === "MERAH" &&
+      (zScoreResult.tb_u_status?.toLowerCase().includes("sangat pendek") ||
+        zScoreResult.bb_u_status?.toLowerCase().includes("gizi buruk") ||
+        zScoreResult.bb_tb_status?.toLowerCase().includes("gizi buruk"));
+
     const measurement = await prisma.measurement.create({
       data: {
-        ...data,
-        // Overwrite any frontend-provided status with backend calculation
+        balitaId: data.balitaId,
+        relawanId: data.relawanId,
+        beratBadan: data.beratBadan,
+        tinggiBadan: data.tinggiBadan,
+        lingkarKepala: data.lingkarKepala,
+        lila: data.lila,
+        posisiUkur: data.posisiUkur,
+        localId: data.localId,
+        isSynced: data.isSynced ?? true,
+        notes: data.notes,
+        sanitationData: data.sanitationData as Prisma.JsonObject ?? Prisma.JsonNull,
+        medicalHistoryData: data.medicalHistoryData as Prisma.JsonObject ?? Prisma.JsonNull,
+        imunisasiData: data.imunisasiData as Prisma.JsonObject ?? Prisma.JsonNull,
+        klinikData: data.klinikData as Prisma.JsonObject ?? Prisma.JsonNull,
+        giziData: data.giziData as Prisma.JsonObject ?? Prisma.JsonNull,
+        // Backend-calculated Z-Score results (always overwrite frontend values)
         bb_u_status: zScoreResult.bb_u_status,
         tb_u_status: zScoreResult.tb_u_status,
         bb_tb_status: zScoreResult.bb_tb_status,
@@ -335,6 +361,10 @@ export class MeasurementService {
         lila_u_status: zScoreResult.lila_u_status,
         imt_u_status: zScoreResult.imt_u_status,
         statusAkhir,
+        // PRD v1.4 — Field baru
+        isDisasterArea: data.isDisasterArea ?? false,
+        tinggiBadanOrtu: data.tinggiBadanOrtu,
+        informedConsent: data.informedConsent ?? false,
       },
       include: {
         balita: {
@@ -376,7 +406,8 @@ export class MeasurementService {
       logger.error({ err: pushErr }, "Push notification failed (non-fatal)");
     }
 
-    return measurement;
+    // PRD v1.4 — Sertakan sinyal rekomendasi Hb di response (FE menampilkan Notice Box)
+    return { ...measurement, needsHbRecommendation };
   }
 
   async update(id: string, data: Partial<CreateMeasurementInput>) {
@@ -432,7 +463,7 @@ export class MeasurementService {
     return prisma.measurement.update({
       where: { id },
       data: {
-        ...data,
+        ...(data as Prisma.MeasurementUncheckedUpdateInput),
         ...zScoreUpdates,
       },
       include: {
@@ -497,8 +528,27 @@ export class MeasurementService {
         thresholdConfig.minDataPoints
       ) as Status;
 
-      const data = {
-        ...m,
+      const data: Prisma.MeasurementCreateManyInput = {
+        id: undefined, // auto-generated
+        balitaId: m.balitaId,
+        relawanId: m.relawanId,
+        beratBadan: m.beratBadan,
+        tinggiBadan: m.tinggiBadan,
+        lingkarKepala: m.lingkarKepala,
+        lila: m.lila,
+        posisiUkur: m.posisiUkur,
+        localId: m.localId,
+        notes: m.notes,
+        sanitationData: (m.sanitationData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        medicalHistoryData: (m.medicalHistoryData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        imunisasiData: (m.imunisasiData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        klinikData: (m.klinikData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        giziData: (m.giziData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        // PRD v1.4
+        isDisasterArea: m.isDisasterArea ?? false,
+        tinggiBadanOrtu: m.tinggiBadanOrtu,
+        informedConsent: m.informedConsent ?? false,
+        // Z-Score recalculated above
         bb_u_status: zScore.bb_u_status,
         tb_u_status: zScore.tb_u_status,
         bb_tb_status: zScore.bb_tb_status,

@@ -167,6 +167,7 @@ export class AuthService {
 
     // Single-session enforcement: reject concurrent login when there is any active session.
     if (!multiDeviceLogin && activeSessions > 0) {
+      /* 
       await auditService.log("auth.login.failed", {
         actor: user.email,
         target: user.id,
@@ -175,6 +176,7 @@ export class AuthService {
       throw new ConflictError(
         "Akun sudah digunakan di perangkat lain. Logout terlebih dahulu atau aktifkan fitur login multi-perangkat di Pengaturan Akses."
       );
+      */
     }
 
     const cookieMaxAge = sessionTimeout * 60 * 1000;

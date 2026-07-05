@@ -156,6 +156,11 @@ model Measurement {
   imt_u_status  String? // Indeks Massa Tubuh / Umur
   statusAkhir   Status // HIJAU (Aman), KUNING (Waspada), MERAH (Bahaya)
 
+  // PRD v1.4 — Onboarding, Komparasi & Etik
+  isDisasterArea   Boolean  @default(false) // 1.1 Screening Gate: Wilayah Terdampak Bencana
+  tinggiBadanOrtu  Float?                   // 1.2 Hal.1: Tinggi Badan Orang Tua (cm) — Komparasi
+  informedConsent  Boolean  @default(false) // 1.4 Modul Etik: Informed Consent orang tua/wali
+
   // Mekanisme Sync PWA
   isSynced      Boolean  @default(true)
   localId       String? // ID dari IndexedDB untuk rekonsiliasi data

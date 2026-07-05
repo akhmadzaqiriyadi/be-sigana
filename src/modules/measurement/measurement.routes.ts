@@ -203,6 +203,9 @@ import {
  *               tb_u_status: { type: string, example: "Normal" }
  *               bb_tb_status: { type: string, example: "Gizi Baik" }
  *               statusAkhir: { type: string, enum: [HIJAU, KUNING, MERAH] }
+ *               isDisasterArea: { type: boolean, default: false, description: "PRD 1.1 - Flag wilayah terdampak bencana" }
+ *               tinggiBadanOrtu: { type: number, nullable: true, description: "PRD 1.2 - Tinggi badan orang tua (cm), opsional, hanya untuk komparasi" }
+ *               informedConsent: { type: boolean, description: "PRD 1.4 - Wajib true. Persetujuan orang tua/wali (Informed Consent)" }
  *     responses:
  *       201:
  *         description: Measurement created
@@ -212,7 +215,14 @@ import {
  *               type: object
  *               properties:
  *                 success: { type: boolean, example: true }
- *                 data: { $ref: '#/components/schemas/Measurement' }
+ *                 data:
+ *                   allOf:
+ *                     - $ref: '#/components/schemas/Measurement'
+ *                     - type: object
+ *                       properties:
+ *                         needsHbRecommendation:
+ *                           type: boolean
+ *                           description: "PRD 1.2 - true jika anak terindikasi Stunting/Gizi Buruk dan pemeriksaan Hb direkomendasikan"
  *       400:
  *         description: Validation Error
  *         content:

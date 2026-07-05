@@ -24,6 +24,15 @@ export const clinicalExaminationSchema = z.object({
     kondisiLainnya: z.object({ status: z.string(), keterangan: z.string() }),
   }),
   tandaDefisiensi: z.array(z.string()),
+  // PRD v1.4 — Halaman 3: Klinik Dasar tambahan
+  riwayatObatCacing: z
+    .object({
+      status: z.enum(["YA", "TIDAK"]),
+      tanggalTerakhir: z.string().optional(), // ISO date string dari Date Picker
+    })
+    .optional(),
+  riwayatInfeksiCacing: z.enum(["YA", "TIDAK"]).optional(),
+  kadarHb: z.number().positive("Kadar Hb harus bernilai positif").optional(), // gr/dL
 });
 
 export const nutritionalStatusSchema = z.object({
@@ -73,6 +82,17 @@ export const createMeasurementSchema = z.object({
     tb_u_status: z.string().optional(),
     bb_tb_status: z.string().optional(),
     statusAkhir: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
+    // PRD v1.4 — Field baru
+    isDisasterArea: z.boolean().default(false),
+    tinggiBadanOrtu: z.number().positive("Tinggi badan orang tua harus positif").optional(),
+    informedConsent: z
+      .boolean({
+        required_error: "Informed Consent wajib diisi",
+        invalid_type_error: "Informed Consent harus berupa boolean",
+      })
+      .refine((val) => val === true, {
+        message: "Persetujuan orang tua/wali (Informed Consent) wajib diberikan sebelum menyimpan data",
+      }),
     ...v2Fields,
   }),
 });
@@ -101,6 +121,10 @@ export const syncMeasurementSchema = z.object({
         tb_u_status: z.string().optional(),
         bb_tb_status: z.string().optional(),
         statusAkhir: z.enum(["HIJAU", "KUNING", "MERAH"]).optional(),
+        // PRD v1.4 — Field baru (semua optional untuk backward-compat offline sync)
+        isDisasterArea: z.boolean().optional(),
+        tinggiBadanOrtu: z.number().positive().optional(),
+        informedConsent: z.boolean().optional(),
         ...v2FieldsArray,
       })
     ),
@@ -153,6 +177,10 @@ export const updateMeasurementSchema = z.object({
     lila: z.number().positive().optional(),
     posisiUkur: z.enum(["TERLENTANG", "BERDIRI"]).optional(),
     notes: z.string().optional(),
+    // PRD v1.4 — Field baru (semua optional untuk update parsial)
+    isDisasterArea: z.boolean().optional(),
+    tinggiBadanOrtu: z.number().positive().optional(),
+    informedConsent: z.boolean().optional(),
     ...v2Fields,
   }),
 });

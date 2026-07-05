@@ -102,17 +102,19 @@ app.use(cors(corsOptions));
 //   threshold: 0,
 // }));
 
+const isDevOrTest = env.NODE_ENV === "development" || env.NODE_ENV === "test";
+
 // Rate Limiting
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // Limit each IP to 100 requests per windowMs
+  max: isDevOrTest ? 100000 : 100, // Limit each IP to 100 requests per windowMs
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Maks 20 request auth per 15 menit (brute force protection)
+  max: isDevOrTest ? 100000 : 20, // Maks 20 request auth per 15 menit (brute force protection)
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -124,7 +126,7 @@ const authLimiter = rateLimit({
 // Rate limit for data-heavy endpoints (GET list/export endpoints)
 const dataLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 menit
-  max: 60, // max 60 request per menit
+  max: isDevOrTest ? 100000 : 60, // max 60 request per menit
   standardHeaders: true,
   legacyHeaders: false,
   message: {
