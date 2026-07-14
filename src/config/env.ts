@@ -38,6 +38,7 @@ export const env = {
   EMAIL_PROVIDER: process.env.EMAIL_PROVIDER || "smtp", // 'smtp' default
   APP_URL: process.env.APP_URL || "http://localhost:3000",
   PASSWORD_RESET_EXPIRES_IN: process.env.PASSWORD_RESET_EXPIRES_IN || "1h",
-  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY,
-  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY,
+  // Web Push Notifications (VAPID)
+  VAPID_PUBLIC_KEY: process.env.VAPID_PUBLIC_KEY || "",
+  VAPID_PRIVATE_KEY: process.env.VAPID_PRIVATE_KEY || "",
 } as const;

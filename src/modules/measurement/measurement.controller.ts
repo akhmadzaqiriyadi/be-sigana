@@ -246,9 +246,16 @@ export const getStatistics = asyncHandler(
     // Explicitly handle "all" for villageId
     const finalVillageId = villageId === "all" ? undefined : villageId;
 
+    const isDisasterArea =
+      typeof req.query.isDisasterArea === "string" &&
+      req.query.isDisasterArea !== "all"
+        ? req.query.isDisasterArea === "true"
+        : undefined;
+
     const statistics = await measurementService.getStatistics(
       period,
-      finalVillageId
+      finalVillageId,
+      isDisasterArea
     );
     sendSuccess(res, "Statistik berhasil diambil", statistics);
   }

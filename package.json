@@ -52,7 +52,7 @@
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.2.0",
-    "@prisma/client": "^7.2.0",
+    "@prisma/client": "7.2.0",
     "@scalar/express-api-reference": "^0.8.32",
     "@types/compression": "^1.8.1",
     "bcryptjs": "^3.0.3",

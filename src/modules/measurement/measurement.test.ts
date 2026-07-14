@@ -28,6 +28,7 @@ mock.module("../../config/db", () => ({
       findMany: mock(),
       count: mock(),
       findFirst: mock(),
+      groupBy: mock(),
       create: mock(),
       update: mock(),
       createMany: mock(),
@@ -426,6 +427,63 @@ describe("MeasurementService", () => {
       expect(callArgs.select).toHaveProperty("deletedAt", true);
       expect(callArgs.select).toHaveProperty("updatedAt", true);
       expect(callArgs.select).toHaveProperty("balitaId", true);
+    });
+  });
+
+  describe("getStatistics", () => {
+    beforeEach(() => {
+      (prisma.measurement.count as any).mockReset();
+      (prisma.measurement.groupBy as any).mockReset();
+      (prisma.measurement.findMany as any).mockReset();
+      (prisma.measurement.findUnique as any).mockReset();
+      (prisma.measurement.findFirst as any).mockReset();
+    });
+
+    it("should filter by isDisasterArea when param is provided", async () => {
+      (prisma.measurement.count as any).mockResolvedValue(0);
+      (prisma.measurement.groupBy as any).mockResolvedValue([]);
+      (prisma.measurement.findMany as any).mockResolvedValue([
+        {
+          createdAt: new Date(),
+          statusAkhir: "HIJAU",
+          balita: { village: { id: 1, name: "Desa A", districts: "Kec A" } },
+        },
+      ]);
+
+      await measurementService.getStatistics("6m", undefined, true);
+
+      const firstCountCall = (prisma.measurement.count as any).mock.calls[0][0];
+      expect(firstCountCall.where.isDisasterArea).toBe(true);
+    });
+
+    it("should return phbsComparison data in getStatistics", async () => {
+      (prisma.measurement.count as any)
+        .mockResolvedValueOnce(100)
+        .mockResolvedValueOnce(80)
+        .mockResolvedValueOnce(20)
+        .mockResolvedValueOnce(15)
+        .mockResolvedValueOnce(15)
+        .mockResolvedValueOnce(50)
+        .mockResolvedValueOnce(8)
+        .mockResolvedValueOnce(120);
+
+      (prisma.measurement.groupBy as any).mockResolvedValue([]);
+
+      (prisma.measurement.findMany as any)
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([])
+        .mockResolvedValueOnce([
+          { createdAt: new Date(), statusAkhir: "HIJAU" },
+        ])
+        .mockResolvedValueOnce([]);
+
+      const result = await measurementService.getStatistics("6m");
+
+      expect(result.phbsComparison).toBeDefined();
+      expect(result.phbsComparison.bencana.risiko).toBe(15);
+      expect(result.phbsComparison.bencana.total).toBe(50);
+      expect(result.phbsComparison.normal.risiko).toBe(8);
+      expect(result.phbsComparison.normal.total).toBe(120);
     });
   });
 });

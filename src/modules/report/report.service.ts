@@ -180,7 +180,7 @@ async function fetchMeasurements(dto: GenerateReportDTO) {
 // Row builder for spreadsheet/CSV
 // ---------------------------------------------------------------------------
 
-function buildRows(
+export function buildRows(
   measurements: Awaited<ReturnType<typeof fetchMeasurements>>,
   dto: GenerateReportDTO
 ) {
@@ -211,7 +211,16 @@ function buildRows(
   if (pg.imtu !== false) paramHeaders.push("IMT/U Status");
   if (pg.lilau !== false) paramHeaders.push("LiLA/U Status");
 
-  const headers = [...baseHeaders, ...paramHeaders];
+  const clinicalHeaders = [
+    "Tinggi Badan Orang Tua (cm)",
+    "Riwayat Obat Cacing",
+    "Tanggal Obat Cacing",
+    "Riwayat Infeksi Cacing",
+    "Kadar Hemoglobin (gr/dL)",
+    "Wilayah Bencana",
+  ];
+
+  const headers = [...baseHeaders, ...paramHeaders, ...clinicalHeaders];
 
   const rows = measurements.map((m, idx) => {
     let statusLabel = "Normal";
@@ -243,7 +252,17 @@ function buildRows(
     if (pg.imtu !== false) params.push(m.imt_u_status ?? "-");
     if (pg.lilau !== false) params.push(m.lila_u_status ?? "-");
 
-    return [...base, ...params];
+    const klinik = (m as any).klinikData;
+    const clinical: (string | number | null)[] = [
+      (m as any).tinggiBadanOrtu ?? "-",
+      klinik?.riwayatObatCacing?.status === "Ya" ? "Ya" : "Tidak",
+      klinik?.riwayatObatCacing?.tanggal ?? "-",
+      klinik?.riwayatInfeksiCacing === "Ya" ? "Ya" : "Tidak",
+      klinik?.kadarHb ?? "-",
+      (m as any).isDisasterArea ? "Ya" : "Tidak",
+    ];
+
+    return [...base, ...params, ...clinical];
   });
 
   return { headers, rows };

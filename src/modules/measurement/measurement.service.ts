@@ -348,11 +348,14 @@ export class MeasurementService {
         localId: data.localId,
         isSynced: data.isSynced ?? true,
         notes: data.notes,
-        sanitationData: data.sanitationData as Prisma.JsonObject ?? Prisma.JsonNull,
-        medicalHistoryData: data.medicalHistoryData as Prisma.JsonObject ?? Prisma.JsonNull,
-        imunisasiData: data.imunisasiData as Prisma.JsonObject ?? Prisma.JsonNull,
-        klinikData: data.klinikData as Prisma.JsonObject ?? Prisma.JsonNull,
-        giziData: data.giziData as Prisma.JsonObject ?? Prisma.JsonNull,
+        sanitationData:
+          (data.sanitationData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        medicalHistoryData:
+          (data.medicalHistoryData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        imunisasiData:
+          (data.imunisasiData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        klinikData: (data.klinikData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        giziData: (data.giziData as Prisma.JsonObject) ?? Prisma.JsonNull,
         // Backend-calculated Z-Score results (always overwrite frontend values)
         bb_u_status: zScoreResult.bb_u_status,
         tb_u_status: zScoreResult.tb_u_status,
@@ -539,9 +542,12 @@ export class MeasurementService {
         posisiUkur: m.posisiUkur,
         localId: m.localId,
         notes: m.notes,
-        sanitationData: (m.sanitationData as Prisma.JsonObject) ?? Prisma.JsonNull,
-        medicalHistoryData: (m.medicalHistoryData as Prisma.JsonObject) ?? Prisma.JsonNull,
-        imunisasiData: (m.imunisasiData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        sanitationData:
+          (m.sanitationData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        medicalHistoryData:
+          (m.medicalHistoryData as Prisma.JsonObject) ?? Prisma.JsonNull,
+        imunisasiData:
+          (m.imunisasiData as Prisma.JsonObject) ?? Prisma.JsonNull,
         klinikData: (m.klinikData as Prisma.JsonObject) ?? Prisma.JsonNull,
         giziData: (m.giziData as Prisma.JsonObject) ?? Prisma.JsonNull,
         // PRD v1.4
@@ -625,7 +631,11 @@ export class MeasurementService {
     });
   }
 
-  async getStatistics(period?: string, villageId?: string) {
+  async getStatistics(
+    period?: string,
+    villageId?: string,
+    isDisasterArea?: boolean
+  ) {
     const now = new Date();
 
     let periodMonths = 6;
@@ -646,6 +656,9 @@ export class MeasurementService {
     const baseWhere: Prisma.MeasurementWhereInput = { deletedAt: null };
     if (villageId && villageId !== "all") {
       baseWhere.balita = { villageId: parseInt(villageId, 10) };
+    }
+    if (isDisasterArea !== undefined) {
+      baseWhere.isDisasterArea = isDisasterArea;
     }
 
     const periodWhere: Prisma.MeasurementWhereInput = {
@@ -673,6 +686,10 @@ export class MeasurementService {
       lastMonthTotal,
       periodData,
       diseaseData,
+      disasterRisikoCount,
+      disasterTotalCount,
+      normalRisikoCount,
+      normalTotalCount,
     ] = await Promise.all([
       prisma.measurement.count({ where: periodWhere }), // Total measurements in period
       prisma.measurement.groupBy({
@@ -721,6 +738,26 @@ export class MeasurementService {
           },
         },
       }),
+      prisma.measurement.count({
+        where: {
+          ...periodWhere,
+          isDisasterArea: true,
+          statusAkhir: { in: ["KUNING", "MERAH"] },
+        },
+      }),
+      prisma.measurement.count({
+        where: { ...periodWhere, isDisasterArea: true },
+      }),
+      prisma.measurement.count({
+        where: {
+          ...periodWhere,
+          isDisasterArea: false,
+          statusAkhir: { in: ["KUNING", "MERAH"] },
+        },
+      }),
+      prisma.measurement.count({
+        where: { ...periodWhere, isDisasterArea: false },
+      }),
     ]);
 
     const statusCounts: Record<string, number> = {
@@ -763,7 +800,11 @@ export class MeasurementService {
         momPercentage,
         trend: Array.from(trendMap.values()),
         topRiskVillages: [],
-        insights,
+        insights: [],
+        phbsComparison: {
+          bencana: { total: disasterTotalCount, risiko: disasterRisikoCount },
+          normal: { total: normalTotalCount, risiko: normalRisikoCount },
+        },
       };
     }
 
@@ -910,6 +951,10 @@ export class MeasurementService {
       trend,
       topRiskVillages,
       insights,
+      phbsComparison: {
+        bencana: { total: disasterTotalCount, risiko: disasterRisikoCount },
+        normal: { total: normalTotalCount, risiko: normalRisikoCount },
+      },
     };
   }
 
