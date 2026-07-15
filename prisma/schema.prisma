@@ -32,10 +32,26 @@ model User {
   deletedAt    DateTime?     // Soft Delete
   refreshToken String?       // Hashed Refresh Token for Single Session Strategy
   pushSubscriptions Json?
+  notifications  Notification[]
   passwordResets PasswordReset[]
   reports        Report[]
 
   @@map("users")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  body      String?
+  type      String   @default("system")
+  isRead    Boolean  @default(false)
+  data      Json?
+  createdAt DateTime @default(now())
+
+  @@index([userId, isRead])
+  @@map("notifications")
 }
 
 enum Role {

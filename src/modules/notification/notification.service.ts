@@ -5,18 +5,23 @@ import { logger } from "@/utils/logger";
 import { NotFoundError } from "@/utils/ApiError";
 import { Role } from "@prisma/client";
 
-webpush.setVapidDetails(
-  "mailto:noreply@sigana.id",
-  env.VAPID_PUBLIC_KEY!,
-  env.VAPID_PRIVATE_KEY!
-);
-
 export interface PushPayload {
   title: string;
   body: string;
   tag?: string;
   data?: Record<string, unknown>;
   requireInteraction?: boolean;
+}
+
+let _vapidInitialized = false;
+function ensureVapid() {
+  if (_vapidInitialized) return;
+  webpush.setVapidDetails(
+    "mailto:noreply@sigana.id",
+    env.VAPID_PUBLIC_KEY!,
+    env.VAPID_PRIVATE_KEY!
+  );
+  _vapidInitialized = true;
 }
 
 export class NotificationService {
@@ -49,7 +54,56 @@ export class NotificationService {
     });
   }
 
+  async create(input: {
+    userId: string;
+    title: string;
+    body?: string;
+    type?: string;
+    data?: Record<string, unknown>;
+  }) {
+    return prisma.notification.create({
+      data: {
+        userId: input.userId,
+        title: input.title,
+        body: input.body || null,
+        type: input.type || "system",
+        data: (input.data as any) || undefined,
+      },
+    });
+  }
+
+  async list(userId: string, opts?: { limit?: number; unread?: boolean }) {
+    const limit = opts?.limit || 20;
+    const where: any = { userId };
+    if (opts?.unread) where.isRead = false;
+
+    const [items, unreadCount] = await Promise.all([
+      prisma.notification.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        take: limit,
+      }),
+      prisma.notification.count({ where: { userId, isRead: false } }),
+    ]);
+    return { items, unreadCount };
+  }
+
+  async markRead(userId: string, notificationId: string) {
+    return prisma.notification.update({
+      where: { id: notificationId, userId },
+      data: { isRead: true },
+    });
+  }
+
+  async markAllRead(userId: string) {
+    return prisma.notification.updateMany({
+      where: { userId, isRead: false },
+      data: { isRead: true },
+    });
+  }
+
   async sendToUser(userId: string, payload: PushPayload) {
+    ensureVapid();
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { pushSubscriptions: true },
