@@ -391,19 +391,25 @@ export class MeasurementService {
       if (measurement.statusAkhir !== "HIJAU") {
         const isCritical = measurement.statusAkhir === "MERAH";
         const anakName = measurement.balita.namaAnak || "Anak";
-        notificationService.sendToUser(data.relawanId, {
-          title: isCritical
-            ? "Perlu Rujukan — " + anakName
-            : "Perlu Pemantauan — " + anakName,
-          body: isCritical
-            ? "Status MERAH: BB=" +
-              data.beratBadan +
-              " kg. Segera rujuk ke fasilitas kesehatan."
-            : "Status KUNING. Jadwalkan tindak lanjut untuk " + anakName + ".",
-          tag: isCritical ? "referral-required" : "follow-up-required",
-          data: { measurementId: measurement.id, balitaId: data.balitaId },
-          requireInteraction: isCritical,
-        });
+        notificationService.sendToUser(
+          data.relawanId,
+          {
+            title: isCritical
+              ? "Perlu Rujukan — " + anakName
+              : "Perlu Pemantauan — " + anakName,
+            body: isCritical
+              ? "Status MERAH: BB=" +
+                data.beratBadan +
+                " kg. Segera rujuk ke fasilitas kesehatan."
+              : "Status KUNING. Jadwalkan tindak lanjut untuk " +
+                anakName +
+                ".",
+            tag: isCritical ? "referral-required" : "follow-up-required",
+            data: { measurementId: measurement.id, balitaId: data.balitaId },
+            requireInteraction: isCritical,
+          },
+          isCritical ? "merah" : "kuning"
+        );
       }
     } catch (pushErr) {
       logger.error({ err: pushErr }, "Push notification failed (non-fatal)");

@@ -102,7 +102,19 @@ export class NotificationService {
     });
   }
 
-  async sendToUser(userId: string, payload: PushPayload) {
+  async sendToUser(userId: string, payload: PushPayload, notifType?: string) {
+    if (notifType) {
+      this.create({
+        userId,
+        title: payload.title,
+        body: payload.body,
+        type: notifType,
+        data: payload.data,
+      }).catch((err) =>
+        logger.error({ err }, "Create notification from push failed")
+      );
+    }
+
     ensureVapid();
     const user = await prisma.user.findUnique({
       where: { id: userId },

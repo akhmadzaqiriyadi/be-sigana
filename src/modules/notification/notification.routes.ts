@@ -4,6 +4,11 @@ import { notificationService } from "./notification.service";
 import { env } from "@/config/env";
 import { asyncHandler } from "@/middlewares/asyncHandler";
 import { sendSuccess } from "@/utils/response";
+import {
+  getNotifications,
+  markAsRead,
+  markAllAsRead,
+} from "./notification.controller";
 
 const router = Router();
 
@@ -31,5 +36,9 @@ router.post(
     sendSuccess(res, "Unsubscribed from push notifications");
   })
 );
+
+router.get("/", authenticate, getNotifications);
+router.patch("/:id/read", authenticate, markAsRead);
+router.patch("/read-all", authenticate, markAllAsRead);
 
 export default router;

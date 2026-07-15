@@ -16,6 +16,10 @@ mock.module("../../config/db", () => ({
       update: mock(),
       updateMany: mock(),
     },
+    user: {
+      findUnique: mock(),
+      update: mock(),
+    },
   },
 }));
 
@@ -76,5 +80,37 @@ describe("NotificationService", () => {
     const result = await svc.markAllRead("u1");
 
     expect(result.count).toBe(5);
+  });
+
+  it("measurement with KUNING status should create notification", async () => {
+    const createSpy = mock();
+    (prisma.notification.create as any) = createSpy;
+    (prisma.user.findUnique as any).mockResolvedValue({
+      pushSubscriptions: [
+        { endpoint: "https://fcm/x", keys: { auth: "a", p256dh: "b" } },
+      ],
+    });
+    (prisma.notification.findMany as any).mockResolvedValue([]);
+    (prisma.notification.count as any).mockResolvedValue(1);
+
+    await svc.sendToUser(
+      "r1",
+      {
+        title: "Perlu Pemantauan",
+        body: "Status KUNING",
+        tag: "follow-up-required",
+        data: { measurementId: "m1" },
+        requireInteraction: true,
+      },
+      "kuning"
+    );
+
+    expect(createSpy).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        userId: "r1",
+        title: "Perlu Pemantauan",
+        type: "kuning",
+      }),
+    });
   });
 });
