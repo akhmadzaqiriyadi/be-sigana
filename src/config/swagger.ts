@@ -94,6 +94,37 @@ const options: swaggerJsdoc.Options = {
             message: { type: "string" },
           },
         },
+        ThresholdConfig: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            key: { type: "string" },
+            value: { type: "number" },
+            description: { type: "string" },
+            updatedAt: { type: "string", format: "date-time" },
+          },
+        },
+        AccessConfig: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            feature: { type: "string" },
+            enabled: { type: "boolean" },
+            roles: { type: "array", items: { type: "string" } },
+          },
+        },
+        WhoDataset: {
+          type: "object",
+          properties: {
+            id: { type: "string", format: "uuid" },
+            name: { type: "string" },
+            year: { type: "integer" },
+            status: {
+              type: "string",
+              enum: ["draft", "published", "archived"],
+            },
+          },
+        },
       },
     },
     security: [

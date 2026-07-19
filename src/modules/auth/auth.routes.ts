@@ -292,6 +292,33 @@ import { authenticate, optionalAuthenticate } from "@/middlewares/auth";
  *             schema:
  *               $ref: '#/components/schemas/Error'
  *
+ * /auth/me:
+ *   get:
+ *     tags:
+ *       - Auth
+ *     summary: Get current user (alias for /profile)
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Current user profile
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ *
  * /auth/reset-password:
  *   post:
  *     tags:
