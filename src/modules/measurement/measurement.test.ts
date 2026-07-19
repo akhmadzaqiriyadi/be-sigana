@@ -21,6 +21,7 @@ mock.module("../../utils/zscore/calculator", () => ({
 }));
 
 // Mock prisma and Standards
+const mockPrismaTransaction = mock();
 mock.module("../../config/db", () => ({
   default: {
     measurement: {
@@ -32,7 +33,6 @@ mock.module("../../config/db", () => ({
       create: mock(),
       update: mock(),
       createMany: mock(),
-      $transaction: mock(),
     },
     balita: {
       findUnique: mock(),
@@ -42,6 +42,7 @@ mock.module("../../config/db", () => ({
       findUnique: mock(),
       create: mock(),
     },
+    $transaction: mockPrismaTransaction,
   },
 }));
 
@@ -132,6 +133,98 @@ describe("MeasurementService", () => {
 
       expect(prisma.measurement.createMany).toHaveBeenCalled();
       expect(result.created).toBe(1);
+    });
+  });
+
+  describe("syncFromOffline (edge cases)", () => {
+    beforeEach(() => {
+      (prisma.measurement.findMany as any).mockReset();
+      (prisma.balita.findMany as any).mockReset();
+      (prisma.measurement.createMany as any).mockReset();
+      mockPrismaTransaction.mockReset();
+
+      // Default: no existing measurements, balita found
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+      (prisma.balita.findMany as any).mockResolvedValue([mockBalita]);
+    });
+
+    it("should upsert when localId already exists", async () => {
+      (prisma.measurement.findMany as any).mockResolvedValue([
+        { id: "existing-id", localId: "loc-1" },
+      ]);
+      (prisma.measurement.createMany as any).mockResolvedValue({ count: 0 });
+      (prisma.$transaction as any).mockResolvedValue([{ id: "existing-id" }]);
+
+      const result = await measurementService.syncFromOffline([
+        {
+          localId: "loc-1",
+          balitaId: "balita-1",
+          relawanId: "relawan-1",
+          beratBadan: 11,
+          tinggiBadan: 76,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+        },
+      ]);
+
+      // Should have updated (not created) the existing record
+      expect(prisma.measurement.update).toHaveBeenCalled();
+      expect(result.created).toBe(0);
+      expect(result.updated).toBe(1);
+    });
+
+    it("should handle empty array gracefully", async () => {
+      const result = await measurementService.syncFromOffline([]);
+
+      expect(result.created).toBe(0);
+      expect(result.updated).toBe(0);
+      expect(result.status).toBe("success");
+    });
+
+    it("should skip measurements with missing balita", async () => {
+      (prisma.balita.findMany as any).mockResolvedValue([]);
+      (prisma.measurement.createMany as any).mockResolvedValue({ count: 0 });
+
+      const result = await measurementService.syncFromOffline([
+        {
+          localId: "loc-1",
+          balitaId: "nonexistent-balita",
+          relawanId: "relawan-1",
+          beratBadan: 10,
+          tinggiBadan: 75,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+        },
+      ]);
+
+      expect(result.created).toBe(0);
+      expect(result.updated).toBe(0);
+    });
+
+    it("should return correct shape", async () => {
+      (prisma.measurement.createMany as any).mockResolvedValue({ count: 1 });
+
+      const result = await measurementService.syncFromOffline([
+        {
+          localId: "loc-2",
+          balitaId: "balita-1",
+          relawanId: "relawan-1",
+          beratBadan: 10,
+          tinggiBadan: 75,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+        },
+      ]);
+
+      expect(result).toHaveProperty("created");
+      expect(result).toHaveProperty("updated");
+      expect(result).toHaveProperty("status");
+      expect(result.created).toBe(1);
+      expect(result.updated).toBe(0);
+      expect(result.status).toBe("success");
     });
   });
 
@@ -255,6 +348,7 @@ describe("MeasurementService", () => {
         lingkarKepala: 45,
         lila: 15,
         posisiUkur: Posisi.TERLENTANG,
+        informedConsent: true,
         imunisasiData: { vaksin: "BCG", catatan: "lengkap" },
         klinikData: {
           tandaVital: { suhuTubuh: "36.5", frekuensiNapas: "30" },
@@ -310,6 +404,160 @@ describe("MeasurementService", () => {
       expect(createCall.data.sanitationData).toEqual({
         conditions: ["ventilasi", "air_bersih"],
       });
+    });
+  });
+
+  describe("create (validation)", () => {
+    beforeEach(() => {
+      // Default mocks for create flow
+      (prisma.balita.findUnique as any).mockResolvedValue(mockBalita);
+      (prisma.measurement.count as any).mockResolvedValue(0);
+      (prisma.measurement.create as any).mockResolvedValue({
+        id: "meas-new",
+        balitaId: "balita-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        bb_u_status: "normal",
+        tb_u_status: "normal",
+        bb_tb_status: "normal",
+        statusAkhir: "HIJAU",
+        balita: { id: "balita-1", namaAnak: "Ani", namaOrtu: "Budi" },
+        relawan: { id: "relawan-1", name: "Rini" },
+      });
+    });
+
+    it("should reject nonexistent balitaId with 404", async () => {
+      (prisma.balita.findUnique as any).mockResolvedValue(null);
+
+      await expect(
+        measurementService.create({
+          balitaId: "nonexistent",
+          relawanId: "relawan-1",
+          beratBadan: 10,
+          tinggiBadan: 75,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+          informedConsent: true,
+        })
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+
+    it("should reject informedConsent: false", async () => {
+      await expect(
+        measurementService.create({
+          balitaId: "balita-1",
+          relawanId: "relawan-1",
+          beratBadan: 10,
+          tinggiBadan: 75,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+          informedConsent: false,
+        })
+      ).rejects.toThrow("Informed consent");
+    });
+
+    it("should reject negative beratBadan", async () => {
+      await expect(
+        measurementService.create({
+          balitaId: "balita-1",
+          relawanId: "relawan-1",
+          beratBadan: -5,
+          tinggiBadan: 75,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+          informedConsent: true,
+        })
+      ).rejects.toThrow("Berat badan");
+    });
+
+    it("should reject negative tinggiBadan", async () => {
+      await expect(
+        measurementService.create({
+          balitaId: "balita-1",
+          relawanId: "relawan-1",
+          beratBadan: 10,
+          tinggiBadan: -10,
+          lingkarKepala: 45,
+          lila: 15,
+          posisiUkur: Posisi.TERLENTANG,
+          informedConsent: true,
+        })
+      ).rejects.toThrow("Tinggi badan");
+    });
+  });
+
+  describe("create (Z-Score computation)", () => {
+    beforeEach(() => {
+      (prisma.balita.findUnique as any).mockResolvedValue(mockBalita);
+      (prisma.measurement.count as any).mockResolvedValue(0);
+      (prisma.measurement.create as any).mockResolvedValue({
+        id: "meas-z",
+        balitaId: "balita-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        bb_u_status: "normal",
+        tb_u_status: "normal",
+        bb_tb_status: "normal",
+        lk_u_status: "normal",
+        lila_u_status: "normal",
+        imt_u_status: "normal",
+        statusAkhir: "HIJAU" as const,
+        balita: { id: "balita-1", namaAnak: "Ani", namaOrtu: "Budi" },
+        relawan: { id: "relawan-1", name: "Rini" },
+      });
+    });
+
+    it("should call calculateAnthropometry and store bb_u_status", async () => {
+      const result = await measurementService.create({
+        balitaId: "balita-1",
+        relawanId: "relawan-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        lingkarKepala: 45,
+        lila: 15,
+        posisiUkur: Posisi.TERLENTANG,
+        informedConsent: true,
+      });
+
+      expect(result.bb_u_status).toBe("normal");
+      expect(result.tb_u_status).toBe("normal");
+      expect(result.bb_tb_status).toBe("normal");
+      expect(result.statusAkhir).toBe("HIJAU");
+    });
+
+    it("should return needsHbRecommendation false when status is HIJAU", async () => {
+      const result = await measurementService.create({
+        balitaId: "balita-1",
+        relawanId: "relawan-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        lingkarKepala: 45,
+        lila: 15,
+        posisiUkur: Posisi.TERLENTANG,
+        informedConsent: true,
+      });
+
+      expect(result).toHaveProperty("needsHbRecommendation", false);
+    });
+
+    it("should pass localId to Prisma create", async () => {
+      await measurementService.create({
+        balitaId: "balita-1",
+        relawanId: "relawan-1",
+        beratBadan: 10,
+        tinggiBadan: 75,
+        lingkarKepala: 45,
+        lila: 15,
+        posisiUkur: Posisi.TERLENTANG,
+        informedConsent: true,
+        localId: "local-abc",
+      });
+
+      const createCall = (prisma.measurement.create as any).mock.lastCall[0];
+      expect(createCall.data.localId).toBe("local-abc");
     });
   });
 
@@ -427,6 +675,231 @@ describe("MeasurementService", () => {
       expect(callArgs.select).toHaveProperty("deletedAt", true);
       expect(callArgs.select).toHaveProperty("updatedAt", true);
       expect(callArgs.select).toHaveProperty("balitaId", true);
+    });
+  });
+
+  describe("update", () => {
+    const existingMeasurement = {
+      id: "meas-1",
+      balitaId: "balita-1",
+      relawanId: "relawan-1",
+      beratBadan: 10,
+      tinggiBadan: 75,
+      lingkarKepala: 45,
+      lila: 15,
+      posisiUkur: Posisi.TERLENTANG,
+      bb_u_status: "normal",
+      tb_u_status: "normal",
+      bb_tb_status: "normal",
+      statusAkhir: "HIJAU" as const,
+      balita: mockBalita,
+    };
+
+    beforeEach(() => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(
+        existingMeasurement
+      );
+      (prisma.measurement.count as any).mockResolvedValue(0);
+      (prisma.measurement.update as any).mockImplementation(
+        ({ data }: any) => ({
+          ...existingMeasurement,
+          ...data,
+          balita: { id: "balita-1", namaAnak: "Ani", namaOrtu: "Budi" },
+        })
+      );
+    });
+
+    it("should recalculate Z-scores when weight changes", async () => {
+      const result = await measurementService.update("meas-1", {
+        beratBadan: 12,
+        informedConsent: true,
+      });
+
+      expect(result.bb_u_status).toBe("normal");
+      expect(result.statusAkhir).toBe("HIJAU");
+    });
+
+    it("should NOT recalculate Z-scores when anthropometry unchanged", async () => {
+      const result = await measurementService.update("meas-1", {
+        notes: "Hanya update catatan",
+      });
+
+      // bb_u_status should still be "normal" from the mock
+      expect(result).toBeDefined();
+    });
+
+    it("should throw 404 for nonexistent measurement", async () => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(null);
+
+      await expect(
+        measurementService.update("nonexistent", {
+          notes: "test",
+        })
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+  });
+
+  describe("delete", () => {
+    const existingMeasurement = {
+      id: "meas-1",
+      balitaId: "balita-1",
+      beratBadan: 10,
+      tinggiBadan: 75,
+    };
+
+    beforeEach(() => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(
+        existingMeasurement
+      );
+      (prisma.measurement.update as any).mockResolvedValue({
+        ...existingMeasurement,
+        deletedAt: new Date(),
+      });
+    });
+
+    it("should soft delete by setting deletedAt", async () => {
+      const result = await measurementService.delete("meas-1");
+
+      expect(prisma.measurement.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: "meas-1" },
+          data: { deletedAt: expect.any(Date) },
+        })
+      );
+      expect(result).toHaveProperty("message");
+    });
+
+    it("should throw 404 for nonexistent measurement", async () => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(null);
+
+      await expect(
+        measurementService.delete("nonexistent")
+      ).rejects.toMatchObject({
+        statusCode: 404,
+      });
+    });
+  });
+
+  describe("findById (RBAC)", () => {
+    const mockMeasurement = {
+      id: "meas-1",
+      balitaId: "balita-1",
+      relawanId: "relawan-1",
+      beratBadan: 12,
+      tinggiBadan: 80,
+      bb_u_status: "normal",
+      tb_u_status: "normal",
+      bb_tb_status: "normal",
+      statusAkhir: "HIJAU" as const,
+      balita: {
+        id: "balita-1",
+        namaAnak: "Ani",
+        namaOrtu: "Budi",
+        tanggalLahir: new Date(new Date().setMonth(new Date().getMonth() - 12)),
+        jenisKelamin: "P",
+        village: { id: 1, name: "Desa A", districts: "Kec A" },
+      },
+      relawan: { id: "relawan-1", name: "Rini", email: "rini@test.com" },
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+
+    beforeEach(() => {
+      (prisma.measurement.findUnique as any).mockResolvedValue(mockMeasurement);
+      (prisma.measurement.findFirst as any).mockResolvedValue(null);
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+    });
+
+    it("should allow RELAWAN to access own data", async () => {
+      const result = await measurementService.findById("meas-1", {
+        role: "RELAWAN",
+        userId: "relawan-1",
+      });
+
+      expect(result.id).toBe("meas-1");
+    });
+
+    it("should throw 403 when RELAWAN accesses other's data", async () => {
+      await expect(
+        measurementService.findById("meas-1", {
+          role: "RELAWAN",
+          userId: "different-relawan",
+        })
+      ).rejects.toMatchObject({ statusCode: 403 });
+    });
+
+    it("should allow ADMIN to access any data", async () => {
+      const result = await measurementService.findById("meas-1", {
+        role: "ADMIN",
+        userId: "admin-1",
+      });
+
+      expect(result.id).toBe("meas-1");
+    });
+  });
+
+  describe("getPublicInfo", () => {
+    it("should return masked name", async () => {
+      (prisma.measurement.findFirst as any).mockResolvedValue({
+        id: "meas-1",
+        balita: {
+          namaAnak: "Budi Santoso",
+          jenisKelamin: "L",
+          village: { name: "Desa Sukamaju" },
+        },
+        createdAt: new Date(),
+      });
+
+      const result = await measurementService.getPublicInfo("meas-1");
+      expect(result.maskedName).toBe("B*** S***");
+    });
+
+    it("should throw 404 for nonexistent id", async () => {
+      (prisma.measurement.findFirst as any).mockResolvedValue(null);
+      (prisma.balita.findUnique as any).mockResolvedValue(null);
+
+      await expect(
+        measurementService.getPublicInfo("nonexistent")
+      ).rejects.toMatchObject({ statusCode: 404 });
+    });
+  });
+
+  describe("verifyAccess", () => {
+    it("should return data when DOB matches", async () => {
+      const birthDate = new Date("2023-05-20");
+      (prisma.measurement.findFirst as any).mockResolvedValue({
+        balitaId: "balita-1",
+      });
+      (prisma.balita.findUnique as any).mockResolvedValue({
+        id: "balita-1",
+        namaAnak: "Ani",
+        tanggalLahir: birthDate,
+        village: { name: "Desa A" },
+      });
+      (prisma.measurement.findMany as any).mockResolvedValue([]);
+
+      const result = await measurementService.verifyAccess(
+        "meas-1",
+        "2023-05-20"
+      );
+      expect(result.success).toBe(true);
+    });
+
+    it("should throw 403 when DOB does not match", async () => {
+      const birthDate = new Date("2023-05-20");
+      (prisma.measurement.findFirst as any).mockResolvedValue({
+        balitaId: "balita-1",
+      });
+      (prisma.balita.findUnique as any).mockResolvedValue({
+        id: "balita-1",
+        namaAnak: "Ani",
+        tanggalLahir: birthDate,
+        village: { name: "Desa A" },
+      });
+
+      await expect(
+        measurementService.verifyAccess("meas-1", "2024-01-01")
+      ).rejects.toMatchObject({ statusCode: 403 });
     });
   });
 

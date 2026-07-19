@@ -1,6 +1,10 @@
 import prisma from "@/config/db";
 import { Posisi, Status, Prisma } from "@prisma/client";
-import { NotFoundError, ForbiddenError } from "@/utils/ApiError";
+import {
+  NotFoundError,
+  ForbiddenError,
+  BadRequestError,
+} from "@/utils/ApiError";
 import {
   calculateAnthropometry,
   AnthropometryResult,
@@ -292,6 +296,17 @@ export class MeasurementService {
   }
 
   async create(data: CreateMeasurementInput) {
+    // Guard clauses: input validation
+    if (!data.informedConsent) {
+      throw new BadRequestError("Informed consent harus disetujui");
+    }
+    if (data.beratBadan <= 0) {
+      throw new BadRequestError("Berat badan harus lebih dari 0");
+    }
+    if (data.tinggiBadan <= 0) {
+      throw new BadRequestError("Tinggi badan harus lebih dari 0");
+    }
+
     // Verify balita exists
     const balita = await prisma.balita.findUnique({
       where: { id: data.balitaId },
