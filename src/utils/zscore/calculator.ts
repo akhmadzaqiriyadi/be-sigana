@@ -1,4 +1,10 @@
-import { WHO_STANDARDS, LMSRecord, GrowthStandard } from "./standards";
+import {
+  WHO_STANDARDS,
+  LMSRecord,
+  GrowthStandard,
+  HeightLMSRecord,
+  GrowthStandardHeight,
+} from "./standards";
 
 type Gender = "L" | "P";
 
@@ -50,6 +56,44 @@ export class ZScoreCalculator {
 
     return {
       month: targetMonth,
+      L: prev.L + (next.L - prev.L) * fraction,
+      M: prev.M + (next.M - prev.M) * fraction,
+      S: prev.S + (next.S - prev.S) * fraction,
+    };
+  }
+
+  private interpolateHeightLMS(
+    data: HeightLMSRecord[],
+    targetHeight: number
+  ): LMSRecord | null {
+    const exact = data.find((d) => d.height === targetHeight);
+    if (exact) return { month: 0, L: exact.L, M: exact.M, S: exact.S };
+
+    if (targetHeight < data[0].height) {
+      const d = data[0];
+      return { month: 0, L: d.L, M: d.M, S: d.S };
+    }
+    if (targetHeight > data[data.length - 1].height) {
+      const d = data[data.length - 1];
+      return { month: 0, L: d.L, M: d.M, S: d.S };
+    }
+
+    let prev = data[0];
+    let next = data[data.length - 1];
+    for (let i = 0; i < data.length - 1; i++) {
+      if (
+        data[i].height <= targetHeight &&
+        data[i + 1].height >= targetHeight
+      ) {
+        prev = data[i];
+        next = data[i + 1];
+        break;
+      }
+    }
+
+    const fraction = (targetHeight - prev.height) / (next.height - prev.height);
+    return {
+      month: 0,
       L: prev.L + (next.L - prev.L) * fraction,
       M: prev.M + (next.M - prev.M) * fraction,
       S: prev.S + (next.S - prev.S) * fraction,
@@ -181,6 +225,14 @@ export class ZScoreCalculator {
     armCirc: number,
     gender: Gender
   ): AnthropometryResult {
+    if (ageInMonths < 0) throw new Error("Age cannot be negative");
+    if (weight <= 0) throw new Error("Weight must be positive");
+    if (height <= 0) throw new Error("Height must be positive");
+    if (headCirc < 0) throw new Error("Head circumference cannot be negative");
+    if (armCirc < 0) throw new Error("Arm circumference cannot be negative");
+    if (gender !== "L" && gender !== "P")
+      throw new Error("Gender must be L or P");
+
     // 1. Get LMS Parameters for Age/Sex
     const bb_u_std = WHO_STANDARDS.find(
       (s): s is GrowthStandard => s.sex === gender && s.measure === "bb_u"
@@ -212,11 +264,13 @@ export class ZScoreCalculator {
 
     const imt_u_lms = this.interpolateLMS(imt_u_std?.data || [], ageInMonths);
 
-    // For BB_TB, usually it's length-based lookup, not age-based.
-    // Simplifying via Mock for now as requested plan focused on logic replacement
-    // In full implementation, BB_TB lookup table relies on Height (cm) not Age.
-    // We will use Age-based for now given the data struct, OR mock the z-score for BB/TB until table added
-    const bb_tb_z = 0; // Placeholder until Height-based table added
+    const bb_tb_std = WHO_STANDARDS.find(
+      (s): s is GrowthStandardHeight =>
+        s.sex === gender && s.measure === "bb_tb"
+    );
+
+    const bb_tb_lms = this.interpolateHeightLMS(bb_tb_std?.data || [], height);
+    const bb_tb_z = bb_tb_lms ? this.calculateZ(weight, bb_tb_lms) : 0;
 
     // Calculate BMI
     const heightM = height / 100;
