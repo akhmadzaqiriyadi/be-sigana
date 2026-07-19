@@ -18,6 +18,11 @@
     "db:studio": "bunx prisma studio",
     "db:seed": "bun run prisma/seed.ts",
     "test": "bun test",
+    "test:ci": "bun test --dots",
+    "test:coverage": "bun test --coverage",
+    "test:watch": "bun test --watch",
+    "test:unit": "bun test --filter='src/tests/**'",
+    "test:unit:coverage": "bun test --filter='src/tests/**' --coverage",
     "test:load": "bun test src/tests/performance.test.ts",
     "prepare": "husky"
   },

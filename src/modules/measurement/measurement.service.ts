@@ -1,10 +1,6 @@
 import prisma from "@/config/db";
 import { Posisi, Status, Prisma } from "@prisma/client";
-import {
-  NotFoundError,
-  ForbiddenError,
-  BadRequestError,
-} from "@/utils/ApiError";
+import { NotFoundError, ForbiddenError } from "@/utils/ApiError";
 import {
   calculateAnthropometry,
   AnthropometryResult,
@@ -296,17 +292,6 @@ export class MeasurementService {
   }
 
   async create(data: CreateMeasurementInput) {
-    // Guard clauses: input validation
-    if (!data.informedConsent) {
-      throw new BadRequestError("Informed consent harus disetujui");
-    }
-    if (data.beratBadan <= 0) {
-      throw new BadRequestError("Berat badan harus lebih dari 0");
-    }
-    if (data.tinggiBadan <= 0) {
-      throw new BadRequestError("Tinggi badan harus lebih dari 0");
-    }
-
     // Verify balita exists
     const balita = await prisma.balita.findUnique({
       where: { id: data.balitaId },
@@ -406,25 +391,19 @@ export class MeasurementService {
       if (measurement.statusAkhir !== "HIJAU") {
         const isCritical = measurement.statusAkhir === "MERAH";
         const anakName = measurement.balita.namaAnak || "Anak";
-        notificationService.sendToUser(
-          data.relawanId,
-          {
-            title: isCritical
-              ? "Perlu Rujukan — " + anakName
-              : "Perlu Pemantauan — " + anakName,
-            body: isCritical
-              ? "Status MERAH: BB=" +
-                data.beratBadan +
-                " kg. Segera rujuk ke fasilitas kesehatan."
-              : "Status KUNING. Jadwalkan tindak lanjut untuk " +
-                anakName +
-                ".",
-            tag: isCritical ? "referral-required" : "follow-up-required",
-            data: { measurementId: measurement.id, balitaId: data.balitaId },
-            requireInteraction: isCritical,
-          },
-          isCritical ? "merah" : "kuning"
-        );
+        notificationService.sendToUser(data.relawanId, {
+          title: isCritical
+            ? "Perlu Rujukan — " + anakName
+            : "Perlu Pemantauan — " + anakName,
+          body: isCritical
+            ? "Status MERAH: BB=" +
+              data.beratBadan +
+              " kg. Segera rujuk ke fasilitas kesehatan."
+            : "Status KUNING. Jadwalkan tindak lanjut untuk " + anakName + ".",
+          tag: isCritical ? "referral-required" : "follow-up-required",
+          data: { measurementId: measurement.id, balitaId: data.balitaId },
+          requireInteraction: isCritical,
+        });
       }
     } catch (pushErr) {
       logger.error({ err: pushErr }, "Push notification failed (non-fatal)");
